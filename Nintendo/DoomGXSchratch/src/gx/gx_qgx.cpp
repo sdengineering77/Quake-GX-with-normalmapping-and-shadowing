@@ -1,0 +1,284 @@
+/*
+ * gx_qgx.cpp
+ *
+ *  Created on: 3 sep. 2012
+ *      Author: Danny
+ */
+#include "gx_qgx.h"
+
+static u8 		gxpevzcomploc = 255;
+static u8 		gxprevcomparefunc = 255;
+static float 	gxprevalphavalue = 0;
+
+void qgxInit(void) {
+	qgxInitGXShader();
+	qgxInitTextures();
+}
+
+/**
+ * =================================================
+ * int qgx_AsGXPrimitiveType(GLenum type)
+ * =================================================
+ */
+int qgx_AsGXPrimitiveType(GLenum type) {
+	u8 _type;
+	switch(type) { // from gl2gx gl_render.c
+		case GL_POINTS: _type = GX_POINTS; break;
+		case GL_LINES: _type = GX_LINES; break;
+		case GL_LINE_STRIP: _type = GX_LINESTRIP; break;
+		case GL_TRIANGLES: _type = GX_TRIANGLES; break;
+        case GL_TRIANGLE_STRIP: _type = GX_TRIANGLESTRIP; break;
+		case GL_TRIANGLE_FAN: _type = GX_TRIANGLEFAN; break;
+		case GL_QUADS: _type = GX_QUADS; break;
+		case GL_POLYGON: _type = GX_TRIANGLEFAN; break;
+		case GL_QUAD_STRIP: _type = GX_TRIANGLESTRIP; break; // DRS: just might work
+		case GL_LINE_LOOP:
+			 _type = GX_NONE;
+			 break;
+		default:
+			 _type = GX_NONE;
+			break;
+	};
+
+	return _type;
+}
+
+
+// ----------------------------------------------------------------
+
+/**
+ * glScissor defines a rectangle, called the scissor box, in window coordinates. The first two arguments,
+ * x and y, specify the LOWER LEFT corner of the box. width and height specify the width and height of the box.
+ */
+void qgxScissor(int xOrigin, int yOrigin, int wd, int ht) {
+	// DRS: These must be a multiple of 2 (?) and within screen bounds
+	u32 x, y, w, h;
+	if (xOrigin < 0) xOrigin = 0;
+	if (yOrigin < 0) yOrigin = 0;
+	// DRS TODO: fixed with/height
+	if (640 < xOrigin + wd) wd = 640 - xOrigin;
+	if (480 < yOrigin + ht) ht = 480 - yOrigin;
+
+	x = xOrigin;
+	y = 480 - ht - yOrigin; // GX origin is top left corner
+	w = wd;
+	h = ht;
+
+	GX_SetScissor(x, y, w, h);
+}
+
+/**
+ * qgxViewport specifies the affine transformation of x and y from normalized device coordinates to window coordinates. The first
+ * two arguments, x and y, specify the LOWER LEFT corner of the box. width and height specify the width and height of the box.
+ */
+void qgxViewport(int xOrigin, int yOrigin, int wd, int ht) {
+	// DRS: These must be a multiple of 2 (?) and within screen bounds
+	u32 x, y, w, h;
+	if (xOrigin < 0) xOrigin = 0;
+	if (yOrigin < 0) yOrigin = 0;
+	// DRS TODO: fixed with/height
+	if (640 < xOrigin + wd) wd = 640 - xOrigin;
+	if (480 < yOrigin + ht) ht = 480 - yOrigin;
+
+	x = xOrigin;
+	y = 480 - ht - yOrigin; // GX origin is top left corner
+	w = wd;
+	h = ht;
+
+	GX_SetViewport(x, y, w, h, 0, 1);
+}
+
+
+/**
+ * Set GL alpha function in GX
+ */
+void qgxAlphaFunc(int func, float value) {
+Sys_Printf(">>> qgxAlphaFunc(%d, %f)\r\n", func, value);
+	u8 gxCompareFunc;
+	u8 gxZCompLoc;
+	switch(func) {
+		case GL_NEVER:
+			gxCompareFunc = GX_NEVER;
+			gxZCompLoc = GX_FALSE;
+			break;
+		case GL_LESS:
+			gxCompareFunc = GX_LESS;
+			gxZCompLoc = GX_FALSE;
+			break;
+		case GL_EQUAL:
+			gxCompareFunc = GX_EQUAL;
+			gxZCompLoc = GX_FALSE;
+			break;
+		case GL_LEQUAL:
+			gxCompareFunc = GX_LEQUAL;
+			gxZCompLoc = GX_FALSE;
+			break;
+		case GL_GREATER:
+			gxCompareFunc = GX_GREATER;
+			gxZCompLoc = GX_FALSE;
+			break;
+		case GL_NOTEQUAL:
+			gxCompareFunc = GX_NEQUAL;
+			gxZCompLoc = GX_FALSE;
+			break;
+		case GL_GEQUAL:
+			gxCompareFunc = GX_GEQUAL;
+			gxZCompLoc = GX_FALSE;
+			break;
+		case GL_ALWAYS:
+		default:
+			gxCompareFunc = GX_ALWAYS;
+			gxZCompLoc = GX_TRUE;
+			break;
+	}
+
+	if (gxpevzcomploc != gxZCompLoc) {
+		GX_SetZCompLoc(gxZCompLoc);
+		gxpevzcomploc = gxZCompLoc;
+Sys_Printf(">>> !!!! Setting zCompLoc %d\r\n", gxZCompLoc);
+	}
+
+	if (gxprevcomparefunc != gxCompareFunc || gxprevalphavalue != value) {
+		GX_SetAlphaCompare(gxCompareFunc, (float) value, GX_AOP_AND, GX_ALWAYS, 0);
+		gxprevcomparefunc = gxCompareFunc;
+		gxprevalphavalue = value;
+Sys_Printf(">>> !!!! Setting gxCompareFunc %d value %f\r\n", gxCompareFunc, value);
+	}
+}
+
+static byte *pPos; // DRS TODO: for debugging only; remove
+static int   posStride;
+static byte *pTex0;
+static int   tex0Stride;
+
+void qgxSetVertexPointer(int type, void *ptr, int stride) {
+//Sys_Printf(">>> qgxSetVertexPointer %d %p %d\r\n", type, ptr, stride);
+	if (stride > 255) {
+		Sys_Error("qgxSetVertexPointer: stride too big %d\r\n", stride);
+	}
+
+	if (type == GX_VA_POS) { // DRS TODO: for debugging only; remove
+		pPos = (byte *) ptr;
+		posStride = stride;
+	} else if (type == GX_VA_TEX0) {
+		pTex0 = (byte *) ptr;
+		tex0Stride = stride;
+	} else {
+		Sys_Error("qgxSetVertexPointer: you forgot extending this function\r\n");
+	}
+	GX_SetArray(type, ptr, stride);
+}
+
+void qgxDrawElements(int primitiveType, int numIndices, int type, int *indices) {
+//Sys_Printf(">>> qgxDrawElements num indices: %d\r\n", numIndices);
+	int attrCnt;
+	int gxtype = qgx_AsGXPrimitiveType(primitiveType);
+	if (numIndices > 0xFFFF) {
+		Sys_Error("Too much indices %d\r\n", numIndices);
+	}
+	gxvtxfmt_t gxvtxfmt = qgxGetCurrentGXVtxFmt();
+
+	GX_Begin(gxtype, gxvtxfmt.gxvtxfmt, numIndices);
+	for (int i=0; i<numIndices; i++) {
+		int index = indices[i];
+		if (index > 0xFFFE) {
+			Sys_Error("Index too big %d\r\n", index);
+		}
+		GX_Position1x16(index);
+//if (numIndices<32) {
+//	float *pos = (float *) &pPos[index*posStride+0];
+//	Sys_Printf(">>> GX_Position1x16: %d %f %f %f\r\n", index, pos[0], pos[1], pos[2]);
+//}
+		for (attrCnt=0; attrCnt<gxvtxfmt.numnormals; attrCnt++) {
+			GX_Normal1x16(index);
+		}
+		for (attrCnt=0; attrCnt<gxvtxfmt.numcolors; attrCnt++) {
+			GX_Color1x16(index);
+		}
+		for (attrCnt=0; attrCnt<gxvtxfmt.numtexmaps; attrCnt++) {
+//if (numIndices<32) {
+//	float *st = (float *) &pTex0[index*tex0Stride+0];
+//	Sys_Printf(">>> GX_TexCoord1x16: %d %f %f\r\n", index, st[0], st[1]);
+//}
+			GX_TexCoord1x16(index);
+		}
+	}
+	GX_End();
+//Sys_Printf(">>> END qgxDrawElements\r\n");
+
+}
+
+void qgxSetKColor0(float r, float g, float b, float a) {
+	GXColor gxcolor;
+	//Sys_Printf(">>> qgxSetKColor0 set to %f %f %f %f\r\n", r, g, b, a);
+	if (r < 0.0f) {
+		r = 0;
+	} else if (r < 1.0f) {
+		r = r * 255;
+	} else {
+		r = 255;
+	}
+
+	if (g < 0.0f) {
+		g = 0;
+	} else if (g < 1.0f) {
+		g = g * 255;
+	} else {
+		g = 255;
+	}
+
+	if (b < 0.0f) {
+		b = 0;
+	} else if (b < 1.0f) {
+		b = b * 255;
+	} else {
+		b = 255;
+	}
+
+	if (a < 0.0f) {
+		a = 0;
+	} else if (a < 1.0f) {
+		a = a * 255;
+	} else {
+		a = 255;
+	}
+
+	gxcolor.r = (u8) r;
+	gxcolor.g = (u8) g;
+	gxcolor.b = (u8) b;
+	gxcolor.a = (u8) a;
+
+	GX_SetTevKColor(GX_KCOLOR0, gxcolor);
+}
+
+
+void qgxSetKColor0(float *color, int numChannels) {
+	float r, g, b, a;
+	if (numChannels == 1) {
+		r = color[0];
+		g = color[0];
+		b = color[0];
+		a = color[0];
+	} else if (numChannels == 2) {
+		r = color[0];
+		g = color[0];
+		b = color[0];
+		a = color[1];
+	} else if (numChannels == 3) {
+		r = color[0];
+		g = color[1];
+		b = color[2];
+		a = 1.0f;
+	} else if (numChannels == 4) {
+		r = color[0];
+		g = color[1];
+		b = color[2];
+		a = color[3];
+	} else {
+		r = g = b = a = 0;
+		Sys_Error("qgxSetKColor0 illegal num channels: %d\r\n", numChannels);
+	}
+
+	qgxSetKColor0(r, g, b, a);
+}
+

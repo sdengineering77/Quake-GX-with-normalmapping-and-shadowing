@@ -1,0 +1,571 @@
+
+#include <gccore.h>
+#include <ogc/lwp.h>
+#include <ogc/lwp_threadq.h>
+#include <ogc/lwp_mutex.h>
+#include <ogc/lwp_watchdog.h>
+#include <wiiuse/wpad.h>
+#include <ogcsys.h>
+
+#include <fat.h>
+#include <unistd.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <dirent.h>
+#include <fnmatch.h>
+#include <errno.h>
+#include <sys/time.h>
+
+
+#include "quakedef.h"
+
+
+#define UXDATA_GRANULARITY 10
+
+// locals
+int 					stacksize = 2 * 1024 * 1024;
+
+
+// globals
+qboolean			isDedicated = false;
+
+// types
+typedef struct {
+	int pathlen;
+	size_t count;
+	size_t lsize;
+	DIR *dir;
+	struct dirent **list;
+} uxdirdata_t;
+
+void uxdata_free (uxdirdata_t *ud)
+{
+	closedir (ud->dir);
+	Z_Free (ud->list);
+}
+
+/* DRS tenebrae specific(???) disk i/o functions */
+
+int direntp_compare (struct dirent **p1, struct dirent **p2)
+{
+	return strncmp ((*p1)->d_name, (*p2)->d_name, sizeof ((*p1)->d_name));
+}
+
+
+dirdata_t *Sys_Findfirst (char *dirname, char *filter, dirdata_t *dirdata)
+{
+	char pathbuf[MAX_OSPATH]; 
+	uxdirdata_t *uxdata;
+	DIR *dir;
+	struct dirent *entry;
+	struct dirent **list;
+	int pathlen;	
+
+	Sys_Printf("1) FindFirst %s %s\n", dirname, filter);
+	if (dirdata && filter){
+		pathlen = strlen (dirname);
+		if (pathlen >= MAX_OSPATH-1)
+			return NULL;
+		strncpy (dirdata->entry, dirname, sizeof(dirdata->entry));
+		dir = opendir (dirdata->entry);
+		if (dir == NULL) {
+			return NULL;
+		}
+		uxdata = Z_Malloc (sizeof(uxdirdata_t));
+		uxdata->count = 0;
+		uxdata->pathlen = pathlen;
+		uxdata->lsize = 10;
+		uxdata->list = Z_Malloc (sizeof(struct dirent *) * (uxdata->lsize));
+		
+		while ((entry = readdir (dir))){
+			int code;
+
+			// realloc entry list
+			if (uxdata->lsize == uxdata->count) {
+				list = Z_Malloc (sizeof(struct dirent *) * (uxdata->lsize += UXDATA_GRANULARITY));
+				memcpy (list, uxdata->list, uxdata->count);
+				Z_Free (uxdata->list);
+				uxdata->list = list;
+			}
+			// check name matching filter
+			// DRS fnmatch is done with name converted to lowercase
+			strncpy(pathbuf, entry->d_name, MAX_OSPATH-1);
+			code = fnmatch (filter, strlwr(pathbuf), 0);
+			Sys_Printf("fnmatch %s (%s)result %d %p\n", pathbuf, entry->d_name, code, entry);
+			switch (code){
+			case 0: /* match */
+				uxdata->list[uxdata->count] = Z_Malloc(sizeof(struct dirent)); // DRS ogc reuses the dirent structure, so make a copy to fix that
+				*uxdata->list[uxdata->count] = *entry;
+				uxdata->count++;
+				break;
+			case FNM_NOMATCH:
+				break;
+			default:
+				Sys_Error ("Sys_Glob_select : fnmatch call (%d)\n",errno);
+			}
+		}
+		
+		if (uxdata->count) {
+			uxdata->lsize = uxdata->count;
+			uxdata->count = 0;
+			// sort the entry list
+			qsort(uxdata->list, uxdata->lsize, sizeof(struct dirent *), (void *) direntp_compare);
+			if (dirname[pathlen-1] != '/') {
+				dirdata->entry[pathlen]='/';
+				uxdata->pathlen++;
+				dirdata->entry[uxdata->pathlen]=0;
+			}
+			strncpy (dirdata->entry+uxdata->pathlen, uxdata->list[0]->d_name, sizeof(dirdata->entry)-uxdata->pathlen);
+			uxdata->dir = dir;
+			dirdata->internal = uxdata;
+			Sys_Printf("return dirdata\n");
+			int i = 0;
+			for (i=0; i<uxdata->lsize; i++) {
+				Sys_Printf("entry: %s\n", uxdata->list[i]->d_name);
+			}
+			return dirdata;
+		}
+		else uxdata_free (uxdata);
+	}
+	return NULL;
+}
+		
+dirdata_t *Sys_Findnext (dirdata_t *dirdata)
+{
+	int i;
+	uxdirdata_t *uxdata;
+	if (dirdata){
+		uxdata=dirdata->internal;
+		if (uxdata) {
+			uxdata->count++;
+			// next entry ?
+			if (uxdata->count<uxdata->lsize){
+				strncpy (dirdata->entry+uxdata->pathlen, uxdata->list[uxdata->count]->d_name, sizeof(dirdata->entry)-uxdata->pathlen); // DRS list[count] fix
+				return dirdata;
+			}
+			// no -> close (just in case Findclose isn't called) 
+			// DRS: free allocated d_names
+			for (i=0; i<uxdata->lsize; i++) {
+				Sys_Printf("Free mem for: %s\n", uxdata->list[i]->d_name);
+				Z_Free(uxdata->list[i]);
+			}
+			uxdata_free (dirdata->internal);
+			dirdata->internal=NULL;
+		}       
+	}
+	return NULL;
+}
+
+void Sys_Findclose (dirdata_t *dirdata)
+{
+	uxdirdata_t *uxdata;
+	if (dirdata){
+		uxdata=dirdata->internal;
+		if (uxdata){
+			uxdata_free (uxdata);
+			dirdata->internal=NULL;
+		}    
+	}
+}
+
+
+/*
+===============================================================================
+
+FILE IO
+
+===============================================================================
+*/
+
+#define MAX_HANDLES             10
+FILE    *sys_handles[MAX_HANDLES];
+
+int             findhandle (void)
+{
+	int             i;
+	
+	for (i=1 ; i<MAX_HANDLES ; i++)
+		if (!sys_handles[i])
+			return i;
+	Sys_Error ("out of handles");
+	return -1;
+}
+
+/*
+================
+filelength
+================
+*/
+int filelength (FILE *f)
+{
+	int             pos;
+	int             end;
+
+	pos = ftell (f);
+	fseek (f, 0, SEEK_END);
+	end = ftell (f);
+	fseek (f, pos, SEEK_SET);
+	
+Sys_Printf("size: %d\n", end);	
+
+	return end;
+
+}
+
+int filelengthByPath(const char *path) {
+	struct stat file_info; 
+	if (stat(path, &file_info)) {
+		return -1;
+	}
+Sys_Printf("size: %d\n", file_info.st_size);	
+	return file_info.st_size;
+}
+
+int Sys_FileOpenRead (char *path, int *hndl)
+{
+	FILE    *f;
+	int             i;
+Sys_Printf("Sys_FileOpenRead Start\n");	
+	
+	i = findhandle ();
+
+	f = fopen(path, "r");
+	if (!f)
+	{
+		*hndl = -1;
+		return -1;
+	}
+	sys_handles[i] = f;
+	*hndl = i;
+Sys_Printf("Sys_FileOpenRead End\n");	
+
+	return filelength(f);
+}
+
+int Sys_FileOpenWrite (char *path)
+{
+	FILE    *f;
+	int             i;
+	
+	i = findhandle ();
+
+	f = fopen(path, "wb");
+	if (!f)
+		Sys_Error ("Error opening %s: %s", path,strerror(errno));
+	sys_handles[i] = f;
+	
+	return i;
+}
+
+void Sys_FileClose (int handle)
+{
+	fclose (sys_handles[handle]);
+	sys_handles[handle] = NULL;
+}
+
+void Sys_FileSeek (int handle, int position)
+{
+	fseek (sys_handles[handle], position, SEEK_SET);
+}
+
+int Sys_FileRead (int handle, void *dest, int count)
+{
+Sys_Printf("Sys_FileRead %d\n", fileno(sys_handles[handle]));
+	int num = fread (dest, 1, count, sys_handles[handle]);
+Sys_Printf("NumRead %d\n", num);
+	return num;
+	
+}
+
+int Sys_FileWrite (int handle, void *data, int count)
+{
+	return fwrite (data, 1, count, sys_handles[handle]);
+}
+
+int     Sys_FileTime (char *path)
+{
+	FILE    *f;
+	
+	f = fopen(path, "rb");
+	if (f)
+	{
+		fclose(f);
+		return 1;
+	}
+	
+	return -1;
+}
+
+void Sys_mkdir (char *path)
+{
+}
+
+
+/*
+===============================================================================
+
+SYSTEM IO
+
+===============================================================================
+*/
+
+void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
+{
+}
+
+static 	const int MAX_CHARS_SYSPRINTF = 4096;
+
+void waitPress(void) {
+	int cnt = 300;
+	while (1) {
+		u32 gcpress = 0, wmpress = 0;
+		PAD_ScanPads();
+		WPAD_ScanPads();
+
+		gcpress = PAD_ButtonsDown(0) | PAD_ButtonsDown(1) | PAD_ButtonsDown(2) | PAD_ButtonsDown(3);
+		wmpress = WPAD_ButtonsDown(0) | WPAD_ButtonsDown(1) | WPAD_ButtonsDown(2) | WPAD_ButtonsDown(3);
+		if (cnt++ > 300)  {
+			Sys_Printf ("Press button %d %d \n", gcpress, wmpress);
+			cnt = 0;
+		}
+		if (gcpress != 0 || wmpress != 0) break;
+		VIDEO_WaitVSync();
+	}
+}
+
+void Sys_Error (char *error, ...)
+{
+	va_list         argptr;
+	char msg[MAX_CHARS_SYSPRINTF];
+
+	printf ("Sys_Error: ");   
+	va_start (argptr,error);
+	vsnprintf (msg, MAX_CHARS_SYSPRINTF, error, argptr); // DRS doesn't work with direct vprintf in Dolphin emu
+	printf(msg);
+	va_end (argptr);
+	printf ("\n");
+
+	waitPress();
+	exit (1);
+}
+
+
+void Sys_Printf (char *fmt, ...)
+{
+/*	va_list         argptr;
+	char msg[MAX_CHARS_SYSPRINTF];
+	
+	va_start (argptr,fmt);
+	vsnprintf (msg, MAX_CHARS_SYSPRINTF, fmt, argptr); // DRS doesn't work with direct vprintf in Dolphin emu
+	printf(msg);
+	va_end (argptr);
+*/
+}
+
+void Sys_Quit (void)
+{
+	exit (0);
+}
+
+
+static double TB_TIMERCLOCK_SEC_INV  = ((double)1)/((double)TB_TIMER_CLOCK*1000);
+// time in seconds(!)
+double Sys_FloatTime (void)
+{
+	long long time = gettime();
+	double dtime = ((double)time) * TB_TIMERCLOCK_SEC_INV;
+	return dtime;
+}
+
+
+char *Sys_ConsoleInput (void)
+{
+	return NULL;
+}
+
+void Sys_Sleep (void)
+{
+}
+
+void Sys_SendKeyEvents (void)
+{
+}
+
+void Sys_HighFPPrecision (void)
+{
+}
+
+void Sys_LowFPPrecision (void)
+{
+}
+
+/* time functions */
+
+void Sys_Strtime(char *buf)
+{
+  struct tm *tm_;
+  static time_t t_;
+  
+  time(&t_);
+  tm_=gmtime(&t_);
+  
+  sprintf(buf,"%02d:%02d:%02d",tm_->tm_hour,tm_->tm_min,tm_->tm_sec);
+  
+}
+
+
+
+/*
+ * ===================================================
+ * MAIN
+ * ===================================================
+ */
+
+static int local_argc; 
+static char **local_argv;
+static const size_t	heap_size	= 20 * 1024 * 1024;
+
+void *align32 (void *p)
+{
+	return (void*)((((int)p + 31)) & 0xffffffe0);
+}
+
+void testRead(int *i) {
+	DIR *direntry;
+	struct dirent *entry;
+	struct stat statbuf;
+	Sys_Printf("testRead()\n");
+	direntry = opendir ("/apps/TenebraeGX/id1");
+
+	while ((entry = readdir (direntry))){
+		int code;
+		char pathbuf[1024];
+		strncpy(pathbuf, entry->d_name, 1024);
+		code = fnmatch ("*.pak", strlwr(pathbuf), 0);
+		printf("2) fnmatch %s (%s)result %d\n", pathbuf, entry->d_name, code);
+	}
+	closedir(direntry);
+	
+	stat("/apps/TenebraeGX/id1/PAK1.PAK",&statbuf);
+	FILE *file = fopen("/apps/TenebraeGX/id1/PAK1.PAK", "rb");
+	Sys_Printf("size: %d\n", statbuf.st_size);
+	int res;
+	byte dest;
+	while((res = fread (&dest, 1, 1, file)) >= 0) {
+		Sys_Printf("%5d %02X -%c -", res, dest, dest);
+		*i = dest;
+	}
+	Sys_Printf("END testRead()\n");
+}
+
+void *quakeMain (void *hole) {
+	unsigned int level, real_heap_size, totalDRam;
+	char		*heap;
+	int 		argc = local_argc;
+	char 	**argv = local_argv;
+	
+	VIDEO_Init();
+    // DRS proper place? perhaps look at in_... initialize WPAD
+	PAD_Init();
+	WPAD_Init();
+
+	argc = 0;
+	static quakeparms_t    parms;
+	parms.memsize = heap_size;
+	parms.basedir = "/apps/TenebraeGX";
+
+	u32 a1lo = (u32) SYS_GetArena1Lo();
+	u32 a1hi = (u32) SYS_GetArena1Hi();
+	Sys_Printf(">>>>> arena 1 memory: lo %d hi %d size %d\n", a1lo, a1hi, a1hi-a1lo);
+
+	// DRS TODO: move to MEM INIT??? gets resized!
+	_CPU_ISR_Disable(level);
+	
+	totalDRam = (u32)SYS_GetArena2Hi() - (u32)SYS_GetArena2Lo();
+	Sys_Printf(">>>>> total DRAM size %d\n", totalDRam);
+	
+	if (totalDRam < 52 * 1024 * 1024) {
+		Sys_Printf(">>>>> adjusting MEM2 hi mark.....\n");
+//		SYS_SetArena2Hi((void *) (SYS_GetArena2Hi() + 10 * 1024 * 1024));
+		totalDRam = (u32)SYS_GetArena2Hi() - (u32)SYS_GetArena2Lo();
+		Sys_Printf(">>>>> total DRAM size %d\n", totalDRam);
+	}
+	
+	AINST_InitMem();
+	BINST_InitMem();
+
+	heap = (char *)align32(SYS_GetArena2Lo());
+	real_heap_size = heap_size - ((u32)heap - (u32)SYS_GetArena2Lo());
+	
+	if ((u32)heap + real_heap_size > (u32)SYS_GetArena2Hi())
+	{
+		_CPU_ISR_Restore(level);
+		Sys_Error("heap + real_heap_size > (u32)SYS_GetArena2Hi()");
+	}	
+	else
+	{
+		SYS_SetArena2Lo(heap + real_heap_size);
+		_CPU_ISR_Restore(level);
+	}
+	parms.membase = heap; 
+	Sys_Printf("main membase %p %d\n", parms.membase, parms.memsize);
+
+	// DRS TODO: move to filesystem init
+	if (!fatInitDefault()) {
+		Sys_Error("fatInitDefault failure\n");
+	}
+	
+//	settime(0); // DRS hangs in emu... thread hangs too...
+
+	COM_InitArgv (argc, argv);
+
+
+	parms.argc = com_argc;
+	parms.argv = com_argv;
+
+	Host_Init (&parms);
+	Sys_Printf ("main loop\n");
+	int cnt = 0;
+	while (1) 	{
+		Host_Frame (0.1);
+
+		if (cnt++ > 60)  {
+			Con_Printf ("time: %f\n", Sys_FloatTime ());
+			cnt = 0;
+		}
+		VIDEO_WaitVSync();
+	}
+}
+
+int main(int argc, char* argv[]) {
+	
+	void *stack = malloc(stacksize);
+
+#if USBGECKO_DEBUG
+	DEBUG_Init(GDBSTUB_DEVICE_USB, 1); // Slot B
+	_break();
+#endif
+
+#if WIFI_DEBUG
+	printf("Now waiting for WI-FI debugger\n");
+	DEBUG_Init(GDBSTUB_DEVICE_WIFI, 8000); // Port 8000 (use whatever you want)
+	_break();
+#endif
+	local_argc = argc;
+	local_argv = argv;
+	//printf("Sizes: %d %d %d\n", sizeof(aliaslightinstant_t) * 32, sizeof(aliasframeinstant_t ) * 32, sizeof(brushlightinstant_t) * 32);
+	// Start the main thread.
+	lwp_t thread;
+	LWP_CreateThread(&thread, &quakeMain, 0, stack, stacksize, 64);
+	//quakeMain();
+	// Wait for it to finish.
+	void* result;
+	LWP_JoinThread(thread, &result);
+
+	exit(0);
+	return 0;
+}
+
+

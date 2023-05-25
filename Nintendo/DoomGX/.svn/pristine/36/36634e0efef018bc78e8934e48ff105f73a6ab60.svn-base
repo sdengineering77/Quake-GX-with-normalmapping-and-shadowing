@@ -1,0 +1,47 @@
+/*
+ * gx_vid.cpp
+ *
+ *  Created on: 26 aug. 2012
+ *      Author: Danny
+ */
+
+#include "../../idlib/precompiled.h"
+#include "gx_textures.h"
+#include "../../renderer/tr_local.h" // for glimpParms_t
+
+/*
+===================
+GLimp_Init
+
+This is the platform specific OpenGL initialization function.  It
+is responsible for loading OpenGL, initializing it,
+creating a window of the appropriate size, doing
+fullscreen manipulations, etc.  Its overall responsibility is
+to make sure that a functional OpenGL subsystem is operating
+when it returns to the ref.
+
+If there is any failure, the renderer will revert back to safe
+parameters and try again.
+===================
+*/
+bool GLimp_Init( glimpParms_t a ) {
+	// DRS: We just force to the size we render in
+	a.width = 640;
+    a.height = 480;
+    a.stereo = false;
+    a.fullScreen = true;
+Sys_Printf(">>> GLimp_Init() \r\n");
+Sys_Printf(">>> -------------------------------------\r\n");
+	// init textures
+	qgxInitTextures();
+
+	return true;
+}
+
+void GLimp_Shutdown() {
+	// DRS TODO: detach video thread from GX?
+}
+
+void GLimp_SetGamma(unsigned short red[256], unsigned short green[256], unsigned short blue[256]) {
+	// DRS Gamma is fixed in GX...
+}

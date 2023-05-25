@@ -1,0 +1,1138 @@
+/*---------------------------------------------------------------------------------
+
+	nehe lesson 6 port to GX by shagkur
+
+---------------------------------------------------------------------------------*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <malloc.h>
+#include <math.h>
+#include <gccore.h>
+#include <wiiuse/wpad.h>
+
+#include "crate_tpl.h"
+#include "crate.h"
+
+#define DEFAULT_FIFO_SIZE	(256*1024)
+
+#define _SHIFTL(v, s, w)	\
+    ((u32) (((u32)(v) & ((0x01 << (w)) - 1)) << (s)))
+#define _SHIFTR(v, s, w)	\
+    ((u32)(((u32)(v) >> (s)) & ((0x01 << (w)) - 1)))
+
+#define GX_LOAD_BP_REG(x)				\
+	do {								\
+		FIFO_PUTU8(0x61);				\
+		FIFO_PUTU32((x));				\
+	} while(0)
+
+
+
+typedef struct tagtexdef
+{
+	void *pal_data;
+	void *tex_data;
+	u32 sz_x;
+	u32 sz_y;
+	u32 fmt;
+	u32 min_lod;
+	u32 max_lod;
+	u32 min;
+	u32 mag;
+	u32 wrap_s;
+	u32 wrap_t;
+	void *nextdef;
+} texdef;
+
+static GXRModeObj *rmode = NULL;
+static void *frameBuffer[2] = { NULL, NULL};
+//static texdef *txdef = (texdef*)crate0_texture;
+
+static GXColor litcolors[] = {
+        { 0xFF, 0xFF, 0xFF, 0xFF }, // Light color 1
+        { 0x00, 0x00, 0x00, 0xFF }, // Ambient 1
+        { 0xFF, 0xFF, 0xFF, 0xFF }  // Material 1
+};
+
+float cubedata[][5] = {
+	// voor
+	{-1.0f,-1.0f, 1.0f, 0.0f,0.0f},
+	{-1.0f,1.0f,1.0f, 0.0f,1.0f},
+	{1.0f,1.0f,1.0f, 1.0f,1.0f},
+	{1.0f,-1.0f,1.0f, 1.0f,0.0f},
+//	{-1.0f,-1.0f, 1.0f, 0.0f,1.0f},
+//	{-1.0f,1.0f,1.0f, 0.0f,0.0f},
+//	{1.0f,1.0f,1.0f, 1.0f,0.0f},
+//	{1.0f,-1.0f,1.0f, 1.0f,1.0f},
+	
+	// achter
+	{1.0f,-1.0f,-1.0f, 0.0f,1.0f},
+	{1.0f,1.0f,-1.0f, 0.0f,0.0f},
+	{-1.0f,1.0f,-1.0f, 1.0f,0.0f},
+	{-1.0f,-1.0f,-1.0f, 1.0f,1.0f},
+
+/*	// onder
+	{-1.0f,-1.0f,-1.0f, 0.0f,1.0f},
+	{-1.0f,-1.0f,1.0f, 0.0f,0.0f},
+	{1.0f,-1.0f,1.0f, 1.0f,0.0f},
+	{1.0f,-1.0f,-1.0f, 1.0f,1.0f},
+				
+	// boven
+	{1.0f,1.0f,-1.0f, 0.0f,1.0f},
+	{1.0f,1.0f,1.0f, 0.0f,0.0f},
+	{-1.0f,1.0f,1.0f, 1.0f,0.0f},
+	{-1.0f,1.0f,-1.0f,1.0f,1.0f},
+*/
+	// links
+	{-1.0f,-1.0f,-1.0f, 0.0f,1.0f},
+	{-1.0f,1.0f,-1.0f, 0.0f,0.0f},
+	{-1.0f,1.0f,1.0f, 1.0f,0.0f},
+	{-1.0f,-1.0f,1.0f, 1.0f,1.0f},
+					
+	// rechts
+	{1.0f,-1.0f,1.0f, 0.0f,1.0f},
+	{1.0f,1.0f,1.0f, 0.0f,0.0f},
+	{1.0f,1.0f,-1.0f, 1.0f,0.0f},	
+	{1.0f,-1.0f,-1.0f, 1.0f,1.0f}
+	
+};
+
+
+void GL_CreateTubeTex(GXTexObj *texObj) {
+	u16 texbuf[128*128];
+	s16 x, y;
+	float height = 64;
+	memset(&texbuf[0], 0x00, 128*128*2);
+	for (y=-64; y<64; y++) {
+		for (x=-64; x<64; x++) {
+			float vect_x = x;
+			float vect_y = -y;
+			float lengthInv = 1.0f/sqrtf(vect_x*vect_x+vect_y*vect_y + height*height);
+			vect_x = vect_x*lengthInv;
+			vect_y = vect_y*lengthInv;
+		
+			u8 b = ((u8) (128 + (127.0f * vect_x)))>>3; // ver
+			u8 g = ((u8) (128 + (127.0f * vect_y)))>>2; // hor
+			texbuf[(x+64) + (y+64)*128] = (g<<5|b);
+		}
+	}
+
+
+	u16 *buf = (u16 *) memalign(32, 128*128*2);
+	u16 *bufptr = buf; 
+
+	for(y=0; y<128; y+=4) {
+		for(x=0; x<128; x+=4) {
+			int xx, yy;
+			for (yy=0; yy<4; yy++) {
+				for (xx=0; xx<4; xx++) {
+					bufptr[xx + yy * 4]  = texbuf[x + xx + (y + yy)*128];
+				}
+			}
+			bufptr += 16; 
+		}
+	}
+
+	GX_InitTexObj(texObj, buf, 128, 128, GX_TF_RGB565, GX_CLAMP, GX_CLAMP, GX_TRUE);
+	//GX_InitTexObjLOD(texObj,GX_LINEAR,GX_LINEAR, 1, 1, 0.0f, GX_TC_GE, GX_TRUE, GX_ANISO_1);
+	DCFlushRange(buf, 128*128*2);
+
+}
+
+void GL_CreateLightBulbTexI8(GXTexObj *texLightDir) {
+	u8 texbuf[128*128];
+	s16 x, y;
+//	float height = 2;
+	u8 *buf = (u8 *) memalign(32, 128*128);
+	memset(&texbuf[0], 0x00, 128*128);
+//	for (y=-32; y<32; y++) {
+//		for (x=-32; x<32; x++) {
+	s16 fact = 16;
+	for (y=0; y<fact; y++) {
+		for (x=0; x<fact; x++) {
+			float vect_x = -x;
+			float vect_y = -y;
+			// bulb
+			float lengthf = sqrtf(vect_x*vect_x+vect_y*vect_y);
+			if (lengthf > fact) lengthf = fact;
+			float sin = lengthf / fact;
+			float cos = sqrtf(1 - sin*sin);
+//			float angle = 0.5f * M_PI * lengthf / fact;
+//			float cos = cosf(angle);
+			float intensity = 255.0f * cos;
+			if (intensity > 255) intensity = 255;
+
+			texbuf[x + y*128] = intensity;
+		}
+	}
+	memset(&buf[0], 0, 128*128);
+	u8 *bufptr = (u8 *) buf;
+	for(y=0; y<128; y+=4) {
+		for(x=0; x<128; x+=8) {
+			int xx, yy;
+			for (yy=0; yy<4; yy++) {
+				for (xx=0; xx<8; xx++) {
+					bufptr[xx + yy * 8]  = texbuf[x + xx + (y + yy)*128];
+				}
+			}
+			bufptr += 32; 
+		}
+	}
+
+	bufptr = (u8 *) buf;
+
+	GX_InitTexObj(texLightDir, (void *) &bufptr[0], 128, 128, GX_TF_I8, GX_MIRROR, GX_MIRROR, GX_TRUE);
+	GX_InitTexObjLOD(texLightDir,GX_LINEAR,GX_LINEAR, 1, 10, 0.0f, GX_TC_GE, GX_TRUE, GX_ANISO_1);
+	DCFlushRange((void *) bufptr, 128*128);
+} 
+
+Vector setlight(Mtx view,f32 theta,f32 phi,f32 dist, GXColor litcol, GXColor ambcol,GXColor matcol)
+{
+	Vector lpos;
+	f32 _theta,_phi;
+	GXLightObj lobj;
+
+	_theta = (f32)theta*M_PI/180.0f;
+	_phi = (f32)phi*M_PI/180.0f;
+	lpos.x = dist * cosf(_phi) * sinf(_theta);
+	lpos.y = dist * sinf(_phi);
+	lpos.z = dist * cosf(_phi) * cosf(_theta);
+
+	guVecMultiply(view,&lpos,&lpos);
+
+	GX_InitLightPos(&lobj,lpos.x,lpos.y,lpos.z);
+	GX_InitLightDir(&lobj,-1.0f,0.0f, 0.0f);	
+//	GX_InitLightAttnA(&lobj, 0.5f, 0.5f, 0.0f);
+	GX_InitLightAttnA(&lobj, 0.0f, 1.0f, 0.0f);
+	GX_InitLightAttnK(&lobj, 1.0f, 0.0f, 0.0f);
+	GX_InitLightColor(&lobj,litcol);
+	GX_LoadLightObj(&lobj,GX_LIGHT0);
+	
+	// set number of rasterized color channels
+	GX_SetNumChans(1);
+    GX_SetChanCtrl(GX_COLOR0,GX_ENABLE,GX_SRC_REG,GX_SRC_REG,GX_LIGHT0,GX_DF_SIGNED,GX_AF_SPOT);
+    GX_SetChanAmbColor(GX_COLOR0A0,ambcol);
+    GX_SetChanMatColor(GX_COLOR0A0,matcol);
+	
+	return lpos;
+}
+
+/*
+*/
+void CalcTangentSpace(Vector *vertices, float texst[], Vector *tangent, Vector *bitangent) {
+//see:
+//http://members.rogers.com/deseric/tangentspace.htm
+	float *v0, *v1, *v2;
+	float *st0, *st1, *st2;
+	Vector vec1, vec2;
+	Vector planes[3];
+	int i;
+
+	v0 = &vertices[0].x;
+	v1 = &vertices[1].x;
+	v2 = &vertices[2].x;
+	st0 = &texst[0];
+	st1 = &texst[2];
+	st2 = &texst[4];
+
+	for (i=0; i<3; i++) {
+		vec1.x = v1[i]-v0[i];
+		vec1.y = st1[0]-st0[0];
+		vec1.z = st1[1]-st0[1];
+		vec2.x = v2[i]-v0[i];
+		vec2.y = st2[0]-st0[0];
+		vec2.z = st2[1]-st0[1];
+		guVecNormalize(&vec1);
+		guVecNormalize(&vec2);
+		guVecCross(&vec1, &vec2, &planes[i]);
+/*		if (planes[i].x == 0) {
+			tangent->x = 0;
+			tangent->y = 0;
+			tangent->z = 0;
+			bitangent->x = 0;
+			bitangent->y = 0;
+			bitangent->z = 0;
+			return;
+		}
+*/
+	}
+
+	//Tangent = (-planes[B][x]/plane[A][x], -planes[B][y]/planes[A][y], - planes[B][z]/planes[A][z] )
+	//Binormal = (-planes[C][x]/planes[A][x], -planes[C][y]/planes[A][y], -planes[C][z]/planes[A][z] )
+	tangent->x = -planes[0].y/planes[0].x;
+	tangent->y = -planes[1].y/planes[1].x;
+	tangent->z = -planes[2].y/planes[2].x;
+	bitangent->x = -planes[0].z/planes[0].x;
+	bitangent->y = -planes[1].z/planes[1].x;
+	bitangent->z = -planes[2].z/planes[2].x;
+	guVecNormalize(tangent);
+	guVecNormalize(bitangent);
+}
+
+
+void CalcTangSp(Vector *vertices, float texst[], Vector *tangent, Vector *bitangent) {
+	Vector v10, v20;
+	Vector v10tex20u, v10tex20v, v20tex10u, v20tex10v;
+	float det_inv;
+	float tex20u = texst[2*2+0] - texst[0*2+0];
+	float tex20v = texst[2*2+1] - texst[0*2+1];
+	float tex10u = texst[1*2+0] - texst[0*2+0];
+	float tex10v = texst[1*2+1] - texst[0*2+1];
+	guVecSub(&vertices[2], &vertices[0], &v20); 
+	guVecSub(&vertices[1], &vertices[0], &v10);
+
+	det_inv = 1.0f/(tex10u*tex20v - tex10v*tex20u);
+	guVecScale(&v10, &v10tex20u, tex20u); 
+	guVecScale(&v20, &v20tex10u, tex10u); 
+	guVecScale(&v10, &v10tex20v, tex20v); 
+	guVecScale(&v20, &v20tex10v, tex10v); 
+	
+	tangent->x = det_inv * (v10tex20v.x - v20tex10v.x);
+	tangent->y = det_inv * (v10tex20v.y - v20tex10v.y);
+	tangent->z = det_inv * (v10tex20v.z - v20tex10v.z);
+	bitangent->x = -det_inv * (v20tex10u.x - v10tex20u.x);
+	bitangent->y = -det_inv * (v20tex10u.y - v10tex20u.y);
+	bitangent->z = -det_inv * (v20tex10u.z - v10tex20u.z);
+}
+
+
+void SortST(float texst[], int *indicesu, int *indicesv) {
+	int i, j;
+	// init
+	for(i=0; i<3; i++) {
+		indicesu[i] = i;
+		indicesv[i] = i;
+	}
+	
+	// sort u
+	for(i=0; i<3; i++) {
+		for(j=i+1; j<3; j++) {
+			int idx1 = indicesu[i];
+			int idx2 = indicesu[j];
+			
+			float value1 = texst[idx1*2+0];
+			float value2 = texst[idx2*2+0];
+			if(value2<value1) {
+				indicesu[i] = idx2;
+				indicesu[j] = idx1;
+			}
+		}
+	}
+
+	// sort v
+	for(i=0; i<3; i++) {
+		for(j=i+1; j<3; j++) {
+			int idx1 = indicesv[i];
+			int idx2 = indicesv[j];
+			
+			float value1 = texst[idx1*2+1];
+			float value2 = texst[idx2*2+1];
+			if(value2<value1) {
+				indicesv[i] = idx2;
+				indicesv[j] = idx1;
+			}
+		}
+	}
+}
+
+void CalcTangSp3(Vector *vertices, float texst[], Vector *tangent, Vector *bitangent) {
+	int indicesu[3], indicesv[3];
+	float texu21;
+	float texv21;
+	float texu31;
+	float texv31;
+	float texu23;
+	float texv23;
+	SortST(texst, &indicesu[0], &indicesv[0]);
+	
+	texu21 = texst[indicesv[1]*2+0] - texst[indicesv[0]*2+0];
+	texv21 = texst[indicesu[1]*2+1] - texst[indicesu[0]*2+1];
+	texu31 = texst[indicesv[2]*2+0] - texst[indicesv[0]*2+0];
+	texv31 = texst[indicesu[2]*2+1] - texst[indicesu[0]*2+1];
+	texu23 = texu21 - texu31;
+	texv23 = texv21 - texv31;
+	
+	// tangent
+	if(texv23 != 0) {
+		// T = (v21*P3 - v31*P2) / v23 - P1
+		Vector fP3, fP2, dP;
+		float f1 = texv21/texv23;
+		float f2 = texv31/texv23;
+		guVecScale(&vertices[indicesu[2]], &fP3, f1); // v21*P3/v23
+		guVecScale(&vertices[indicesu[1]], &fP2, f2); // v31*P2/v23
+		guVecSub(&fP3, &fP2, &dP); // (v21*P3 - v31*P2) / v23
+		guVecSub(&dP, &vertices[indicesu[0]], tangent);
+	} else {
+		guVecSub(&vertices[indicesu[2]], &vertices[indicesu[1]], tangent); // (p3-p2)
+	}
+	
+	// bitangent
+	if(texu23 != 0) {
+		// T = (u21*P3 - u31*P2) / u23 - P1
+		Vector fP3, fP2, dP;
+		float f1 = texu21/texu23;
+		float f2 = texu31/texu23;
+		guVecScale(&vertices[indicesv[2]], &fP3, f1); // u21*P3/u23
+		guVecScale(&vertices[indicesv[1]], &fP2, f2); // u31*P2/u23
+		guVecSub(&fP3, &fP2, &dP); // (u21*P3 - u31*P2) / u23
+		guVecSub(&vertices[indicesv[0]], &dP, bitangent);
+	} else {
+		guVecSub(&vertices[indicesv[1]], &vertices[indicesv[2]], bitangent); // (p3-p2)
+	}
+	
+	
+}
+
+void CalcTangSp2(Vector *vertices, float texst[], Vector *tangent, Vector *bitangent) {
+	Vector tmp;
+	int idxu, idxv;
+	float texu21;
+	float texv21;
+	float texu31;
+	float texv31;
+	
+	// sort u
+	if (texst[2*2+0] <= texst[0*2+0] && texst[2*2+0] <= texst[1*2+0]) {
+		idxu = 2;
+	} else
+	if (texst[1*2+0] <= texst[0*2+0] && texst[1*2+0] <= texst[2*2+0]) {
+		idxu = 1;
+	} else {
+		idxu = 0;
+	} 
+	// sort v
+	if (texst[2*2+1] <= texst[0*2+1] && texst[2*2+1] <= texst[1*2+1]) {
+		idxv = 2;
+	} else
+	if (texst[1*2+1] <= texst[0*2+1] && texst[1*2+1] <= texst[2*2+1]) {
+		idxv = 1;
+	} else {
+		idxv = 0;
+	} 
+	
+	texu21 = texst[((1+idxu)%3)*2+0] - texst[((0+idxu)%3)*2+0];
+	texv21 = texst[((1+idxv)%3)*2+1] - texst[((0+idxv)%3)*2+1];
+	texu31 = texst[((2+idxu)%3)*2+0] - texst[((0+idxu)%3)*2+0];
+	texv31 = texst[((2+idxv)%3)*2+1] - texst[((0+idxv)%3)*2+1];
+	
+	if (texu31 != 0) {
+		float texdu = texu21/texu31;
+		guVecSub(&vertices[(2+idxu)%3], &vertices[(0+idxu)%3], &tmp); // (p3-p1)
+		guVecScale(&tmp, &tmp, texdu); // texu21 * (p3-p1) / texu31
+		guVecAdd(&tmp, &vertices[(0+idxu)%3], &tmp); // p1 + texu21 * (p3-p1) / texu31
+		guVecSub(&vertices[(1+idxu)%3], &tmp, bitangent); // p2 - (p1 + texu21 * (p3-p1) / texu31)
+	} else {
+		guVecSub(&vertices[(0+idxu)%3], &vertices[(2+idxu)%3], bitangent); // (p3-p1)
+	}
+	
+	if (texv31 != 0) {
+		float texdv = texv21/texv31;
+		guVecSub(&vertices[(2+idxv)%3], &vertices[(0+idxv)%3], &tmp); // (p3-p1)
+		guVecScale(&tmp, &tmp, texdv); // texv21 * (p3-p1) / texv31
+		guVecAdd(&tmp, &vertices[(0+idxv)%3], &tmp); // p1 + texv21 * (p3-p1) / texv31
+		guVecSub(&vertices[(1+idxv)%3], &tmp, tangent); // p2 - (p1 + texu21 * (p3-p1) / texu31) 
+	} else {
+		guVecSub(&vertices[(0+idxv)%3], &vertices[(2+idxv)%3], tangent); // (p3-p1)
+	}
+	
+}
+
+int main(int argc,char **argv)
+{
+	u16	buttonState = 0x0000;
+	f32 yscale,zt = 0;
+	u32 xfbHeight;
+	u32 fb = 0;
+	f32 rquad = 0.0f;
+	u32 first_frame = 1;
+	GXTexObj texture;
+	GXTexObj light_tex;
+	GXTexObj reflectionlight_tex;
+	
+	Mtx nullMtx = 
+		{{ 0.0f,  0.0f,  0.0f,  0.0f},
+		 { 0.0f,  0.0f,  0.0f,  0.0f},
+		 { 0.0f,  0.0f,  0.0f,  0.0f}};
+	Mtx halfMtx = 
+		{{ 0.5f,  0.0f,  0.0f,  0.0f},
+		 { 0.0f,  0.5f,  0.0f,  0.0f},
+		 { 0.0f,  0.0f,  0.5f,  0.0f}};
+	Mtx view; // view and perspective matrices
+	Mtx model, modelview, mvi;
+	Mtx44 perspective;
+	void *gpfifo = NULL;
+	GXColor background = {0, 0, 0, 0xff};
+	Vector cam = {0.0F, 0.0F, 0.0F},
+			up = {0.0F, 1.0F, 0.0F},
+		  look = {0.0F, 0.0F, -1.0F};
+	TPLFile crateTPL;
+
+	VIDEO_Init();
+	WPAD_Init();
+
+	rmode = VIDEO_GetPreferredMode(NULL);
+
+	// allocate the fifo buffer
+	gpfifo = memalign(32,DEFAULT_FIFO_SIZE);
+	memset(gpfifo,0,DEFAULT_FIFO_SIZE);
+
+	// allocate 2 framebuffers for double buffering
+	frameBuffer[0] = SYS_AllocateFramebuffer(rmode);
+	frameBuffer[1] = SYS_AllocateFramebuffer(rmode);
+
+	// configure video
+	VIDEO_Configure(rmode);
+	VIDEO_SetNextFramebuffer(frameBuffer[fb]);
+	VIDEO_Flush();
+	VIDEO_WaitVSync();
+	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
+
+	fb ^= 1;
+
+	// init the flipper
+	GX_Init(gpfifo,DEFAULT_FIFO_SIZE);
+ 
+	// clears the bg to color and clears the z buffer
+	GX_SetCopyClear(background, 0x00ffffff);
+ 
+	// other gx setup
+	GX_SetViewport(0,0,rmode->fbWidth,rmode->efbHeight,0,1);
+	yscale = GX_GetYScaleFactor(rmode->efbHeight,rmode->xfbHeight);
+	xfbHeight = GX_SetDispCopyYScale(yscale);
+	GX_SetScissor(0,0,rmode->fbWidth,rmode->efbHeight);
+	GX_SetDispCopySrc(0,0,rmode->fbWidth,rmode->efbHeight);
+	GX_SetDispCopyDst(rmode->fbWidth,xfbHeight);
+	GX_SetCopyFilter(rmode->aa,rmode->sample_pattern,GX_TRUE,rmode->vfilter);
+	GX_SetFieldMode(rmode->field_rendering,((rmode->viHeight==2*rmode->xfbHeight)?GX_ENABLE:GX_DISABLE));
+ 
+	if (rmode->aa)
+        GX_SetPixelFmt(GX_PF_RGB565_Z16, GX_ZC_LINEAR);
+    else
+        GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
+
+	GX_SetCullMode(GX_CULL_BACK);
+	GX_CopyDisp(frameBuffer[fb],GX_TRUE);
+	GX_SetDispCopyGamma(GX_GM_1_0);
+
+	// setup the vertex attribute table
+	// describes the data
+	// args: vat location 0-7, type of data, data format, size, scale
+	// so for ex. in the first call we are sending position data with
+	// 3 values X,Y,Z of size F32. scale sets the number of fractional
+	// bits for non float data.
+	GX_ClearVtxDesc();
+	GX_SetVtxDesc(GX_VA_POS, GX_DIRECT);
+	GX_SetVtxDesc(GX_VA_NBT, GX_DIRECT);
+	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
+	
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_NBT, GX_NRM_NBT3, GX_F32, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
+
+    GX_InvVtxCache();
+	GX_InvalidateTexAll();
+	TPL_OpenTPLFromMemory(&crateTPL, (void *)crate_tpl,crate_tpl_size);
+	TPL_GetTexture(&crateTPL, crate, &texture);
+	TPL_GetTexture(&crateTPL, light, &light_tex);
+	TPL_GetTexture(&crateTPL, reflectionlight, &reflectionlight_tex);
+	//GL_CreateLightBulbTexI8(&reflectionlight_tex);
+	//GL_CreateTubeTex(&texture);
+	
+	// setup our camera at the origin
+	// looking down the -z axis with y up
+	guLookAt(view, &cam, &up, &look);
+ 
+	// setup our projection matrix
+	// this creates a perspective matrix with a view angle of 90,
+	// and aspect ratio based on the display resolution
+    f32 w = rmode->viWidth;
+    f32 h = rmode->viHeight;
+	guPerspective(perspective, 45, (f32)w/h, 0.1F, 300.0F);
+	GX_LoadProjectionMtx(perspective, GX_PERSPECTIVE);
+
+	Vector cubeAxis[3] = {
+		{0,1,0},
+		{0,1,0},
+		{0,1,0}};
+//		{1,1,0},
+//		{0,1,1},
+//		{1,0,1}};
+
+	int i;
+	int 		numverts = sizeof(cubedata)/sizeof(float[5]);
+	Vector	*tangents 	= memalign(32, numverts * sizeof(Vector));
+	Vector	*bitangents = memalign(32, numverts * sizeof(Vector));
+	Vector 	*normals 	= memalign(32, numverts * sizeof(Vector));
+	
+	for(i=0; i<numverts; i+=4) {
+		int j;
+		Vector t, b, n, pn;
+		Vector 	verts[3];
+		float		textst[6];
+		for(j=0; j<3; j++) {
+			float *fverts = cubedata[i+j];
+			float *ftextst = &fverts[3];
+			verts[j].x = fverts[0];
+			verts[j].y = fverts[1];
+			verts[j].z = fverts[2];
+			textst[j*2] = ftextst[0];
+			textst[j*2+1] = ftextst[1];
+		}
+		//CalcTangentSpace(&verts[0], &textst[0], &t, &b);
+		guVecSub(&verts[1], &verts[0], &t);
+		guVecSub(&verts[2], &verts[0], &b);
+		guVecCross(&b, &t, &pn);
+
+		//guVecNormalize(&n);
+
+		CalcTangSp(&verts[0], &textst[0], &t, &b);
+		guVecNormalize(&t);
+		guVecNormalize(&b);
+	
+
+		for(j=0; j<4; j++) {
+			Vector ortht, orthb;
+			n.x = cubedata[i+j][0];
+			n.y = 0;//cubedata[i+j][1];
+			n.z = cubedata[i+j][2];
+			guVecNormalize(&n);
+
+/*			float dpt = guVecDotProduct(&n, &t);
+			float dpb = guVecDotProduct(&n, &b);
+			ortht.x = t.x - n.x * dpt;
+			ortht.y = t.y - n.y * dpt;
+			ortht.z = t.z - n.z * dpt;
+			orthb.x = b.x - n.x * dpb;
+			orthb.y = b.y - n.y * dpb;
+			orthb.z = b.z - n.z * dpb;
+*/
+			ortht = t;
+			orthb = b;
+
+			guVecNormalize(&ortht);
+			guVecNormalize(&orthb);
+	
+			normals[i+j].x = n.x; 
+			normals[i+j].y = n.y; 
+			normals[i+j].z = n.z; 
+
+			tangents[i+j].x = ortht.x; 
+			tangents[i+j].y = ortht.y; 
+			tangents[i+j].z = ortht.z; 
+			bitangents[i+j].x = orthb.x;
+			bitangents[i+j].y = orthb.y;
+			bitangents[i+j].z = orthb.z;
+		}
+	}
+	
+	f32 dir = 90.0f;
+	zt = 0.0f;
+	rquad = 45.0f;
+	u8 mode = 0;
+	u8 vsync = 1;
+	
+	while(1) {
+
+		WPAD_ScanPads();
+		if(WPAD_ButtonsDown(0) & WPAD_BUTTON_HOME) exit(0);
+		if (WPAD_ButtonsHeld(0)&WPAD_BUTTON_LEFT) zt -= 0.25f;
+		if (WPAD_ButtonsHeld(0)&WPAD_BUTTON_RIGHT) zt += 0.25f;
+		if (WPAD_ButtonsHeld(0)&WPAD_BUTTON_UP) dir -= 0.25f;
+		if (WPAD_ButtonsHeld(0)&WPAD_BUTTON_DOWN) dir += 0.25f;
+		
+		u32 buttonsHeld = WPAD_ButtonsHeld(0);
+		u32 buttonsInv  = buttonsHeld^0xFFFFFFFF;
+		if (buttonsHeld&WPAD_BUTTON_A) buttonState |= WPAD_BUTTON_A;
+		if (buttonsHeld&WPAD_BUTTON_B) buttonState |= WPAD_BUTTON_B;
+		if (buttonsHeld&WPAD_BUTTON_PLUS) buttonState |= WPAD_BUTTON_PLUS;
+		if (buttonsHeld&WPAD_BUTTON_MINUS) buttonState |= WPAD_BUTTON_MINUS;
+
+
+		if (buttonsInv&WPAD_BUTTON_A&buttonState)     { mode^=1; buttonState &= (WPAD_BUTTON_A^0xFFFF);}
+		if (buttonsInv&WPAD_BUTTON_B&buttonState)     { mode=1; buttonState &= (WPAD_BUTTON_B^0xFFFF);}
+		if (buttonsInv&WPAD_BUTTON_PLUS&buttonState)  { mode^=1; buttonState &= (WPAD_BUTTON_PLUS^0xFFFF);}
+		if (buttonsInv&WPAD_BUTTON_MINUS&buttonState) { vsync^=1; buttonState &= (WPAD_BUTTON_MINUS^0xFFFF);}
+	
+
+		// set number of rasterized color channels
+		GX_SetNumChans(1);
+		
+		// set the light
+		Vector lpos = setlight(view,dir, zt, 80.0f, litcolors[0],litcolors[1],litcolors[2]);
+//		Vector lpos = setlight(view, 0, 0, -0.0f, litcolors[0],litcolors[1],litcolors[2]);
+//		dir+= 0.05f;
+		if (dir >= 360 ) dir = 0;
+		else if (dir <= 0) dir = 360;
+		if (zt >= 360 ) zt = 0;
+		else if (zt <= 0) zt = 360;
+		
+		
+		// ================= SHADER STUFF ================= 
+
+		GX_LoadTexMtxImm(nullMtx, GX_TEXMTX0, GX_MTX3x4);
+		GX_LoadTexMtxImm(halfMtx, GX_TEXMTX1, GX_MTX3x4);
+//		GX_LoadPosMtxImm(nullMtx, GX_PNMTX1);
+//void GX_LoadNrmMtxImm(Mtx mt,u32 pnidx);
+
+
+		GX_ClearVtxDesc();
+		GX_SetVtxDesc(GX_VA_POS, GX_DIRECT);
+		GX_SetVtxDesc(GX_VA_NBT, GX_DIRECT);
+		GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
+		
+		GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
+		GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_NBT, GX_NRM_NBT3, GX_F32, 0);
+		GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
+
+		GX_InvVtxCache();
+
+		// VERTEX SHADER
+
+		GXLightObj camlightobj;
+		GX_InitLightPos(&camlightobj, 0.0f, 0.0f, 0.0f);
+		GX_InitLightColor(&camlightobj, litcolors[1]);
+		GX_LoadLightObj(&camlightobj, GX_LIGHT7);
+		
+		//set number of textures to generate
+		GX_SetNumTexGens(4);
+
+		// setup texture coordinate generation
+		// args: texcoord slot 0-7, matrix type, source to generate texture coordinates from, matrix to use
+		GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
+		// text coord 1 renders st = (0, 0) TODO: is it possible to use mtx to render to 0, 0. Safes vertex bandwith
+		GX_SetTexCoordGen(GX_TEXCOORD1, GX_TG_MTX2x4, GX_TG_TEX0, GX_TEXMTX0); 
+		// text coord 2 renders the bump offset since it uses coord 1 as origin
+		GX_SetTexCoordGen(GX_TEXCOORD2, GX_TG_BUMP0, GX_TG_TEXCOORD1, GX_IDENTITY);
+//		GX_SetTexCoorScaleManually(GX_TEXCOORD2,GX_TRUE,128,128);
+		// text coord 3 renders the bump offset related to camera position
+		GX_SetTexCoordGen(GX_TEXCOORD3, GX_TG_BUMP7, GX_TG_TEXCOORD1, GX_IDENTITY);
+//		GX_SetTexCoorScaleManually(GX_TEXCOORD3,GX_TRUE,128,128);
+		
+//		GX_SetTexCoordGen(GX_TEXCOORD3, GX_TG_MTX2x4, GX_TG_TEX0, GX_TEXMTX0); 
+
+
+		// PIXEL SHADER
+		GX_SetCopyClamp(GX_CLAMP_BOTTOM);
+		u8 tevstage = GX_TEVSTAGE0;
+
+		// setup stage 0 to calculate a light scale value which culls out the light when it
+		// is behind the surface. 
+		GX_SetTevKColorSel(tevstage, GX_TEV_KCSEL_1_4); // ambient intensity
+//		GX_SetTevColorIn(tevstage, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_RASC);	
+		//GX_SetTevColorIn(tevstage, GX_CC_ZERO, GX_CC_KONST, GX_CC_HALF, GX_CC_ZERO);	
+//		GX_SetTevColorIn(tevstage, GX_CC_RASC, GX_CC_KONST, GX_CC_ONE, GX_CC_ZERO);	
+		GX_SetTevColorIn(tevstage, GX_CC_RASC, GX_CC_ZERO, GX_CC_ONE, GX_CC_ZERO);	
+		//GX_SetTevColorIn(tevstage, GX_CC_RASC, GX_CC_TEXC, GX_CC_ONE, GX_CC_ZERO);	
+		GX_SetTevColorOp(tevstage, GX_TEV_COMP_RGB8_GT, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVREG1);
+		//GX_SetTevColorOp(tevstage, GX_TEV_COMP_BGR24_GT, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVREG1);
+		//GX_SetTevColorOp(tevstage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVREG1);
+		
+//		GX_SetTevColorOp(tevstage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVREG1);
+//		GX_SetTevOrder(tevstage, GX_TEXCOORDNULL, GX_TEXMAP_DISABLE, GX_COLOR0A0);
+		GX_SetTevOrder(tevstage, GX_TEXCOORD2, GX_TEXMAP2, GX_COLOR0A0);
+		tevstage++;
+		
+		// ind stage 0 is set up to read normal map from texmap 0 
+		GX_SetIndTexOrder(GX_INDTEXSTAGE0,GX_TEXCOORD0,GX_TEXMAP0);
+		GX_SetIndTexCoordScale(GX_INDTEXSTAGE0,GX_ITS_1,GX_ITS_1); // normal map texture scale 1:1
+
+		// setup indirect unit for tev stage 0 (for some reason I get a ABGR triplet, so transforms are done on normal map's B and G components)
+		f32 offset_mtx[2][3] = {
+//			{  0.0f,    0.0f,    0.0f}, // B -> horizontal coordinate (s)
+//			{  0.0f,    0.0f,    0.0f}  // G -> vertical coordinate (t)
+			{  0.0f, -0.125f,    0.0f}, // B -> horizontal coordinate (s)
+			{  0.0f,    0.0f, -0.125f}  // G -> vertical coordinate (t)
+		};
+		
+
+		GX_SetNumIndStages(1);
+		GX_SetIndTexMatrix(GX_ITM_0,offset_mtx, 0);
+		
+		GX_SetTevIndirect(
+			tevstage, // tevstage 0 is used to combine normal map and lightmap
+			GX_INDTEXSTAGE0, // ind stage is used to read normal map
+			GX_ITF_8, // texture format 8 bits per channel
+			GX_ITB_STU, // use bias on s and t channels (red and green and blue)
+			GX_ITM_0, // use 3x2 matrix 0
+			GX_ITW_OFF, // do not use texture wrapping
+			GX_ITW_OFF, // do not use texture wrapping
+			GX_FALSE, // don't add in previous coordinates
+			GX_FALSE, // don't use mipmap stuff
+			GX_ITBA_OFF // don't use bump alpha (TODO: can this be used to blend reflection and difuse?)
+			); 
+
+
+		// setup tev stage 1 to lookup the lightmap
+		// the texture coordinates used should be the sum of the bump offset coordinates and
+		// the indirect lookup associated with it using SetTevIndirect() above.
+//		GX_SetTevColorIn(tevstage, GX_CC_RASC, GX_CC_ZERO, GX_CC_TEXC, GX_CC_ZERO);
+
+		GX_SetTevKColorSel(tevstage, GX_TEV_KCSEL_1_8); // ambient intensity
+		GX_SetTevColorIn(tevstage, GX_CC_ZERO, GX_CC_TEXC, GX_CC_C1, GX_CC_KONST); // !!!! check nog ff tevprev 
+		GX_SetTevColorOp(tevstage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+		GX_SetTevOrder(tevstage, GX_TEXCOORD2, GX_TEXMAP2, GX_COLORNULL);
+//		GX_SetTevColorIn(tevstage, GX_CC_RASC, GX_CC_ZERO, GX_CC_TEXC, GX_CC_ZERO);
+//		GX_SetTevColorOp(tevstage, GX_TEV_COMP_A8_GT, GX_TB_ZERO, GX_CS_DIVIDE_2, GX_TC_LINEAR, GX_TEVPREV);
+//		GX_SetTevOrder(tevstage, GX_TEXCOORD2, GX_TEXMAP2, GX_COLOR0A0);
+		tevstage++;
+
+		
+		// setup tev stage 1 to add reflection. Same theory as above, but light is where the cam is
+		if (mode) {
+		GX_SetTevIndirect(
+			tevstage, // tevstage 0 is used to combine normal map and lightmap
+			GX_INDTEXSTAGE0, // ind stage is used to read normal map
+			GX_ITF_8, // texture format 8 bits per channel
+			GX_ITB_STU, // use bias on s and t channels (red and green and blue)
+			GX_ITM_0, // use 3x2 matrix 0
+			GX_ITW_OFF, // do not use texture wrapping
+			GX_ITW_OFF, // do not use texture wrapping
+			GX_TRUE, // add in previous coordinates
+			GX_FALSE, // don't use mipmap stuff
+			GX_ITBA_OFF // don't use bump alpha (TODO: can this be used to blend reflection and difuse?)
+			); 
+//		GX_SetTevColorIn(tevstage, GX_CC_RASC, GX_CC_ZERO, GX_CC_TEXC, GX_CC_ZERO);
+//		GX_SetTevColorIn(tevstage, GX_CC_RASC, GX_CC_ZERO, mode ? GX_CC_TEXC : GX_CC_ZERO, GX_CC_ZERO);
+//		GX_SetTevColorOp(tevstage, GX_TEV_COMP_A8_GT, GX_TB_ZERO, GX_CS_DIVIDE_2, GX_TC_LINEAR, GX_TEVPREV);
+//		GX_SetTevOrder(tevstage, GX_TEXCOORD3, GX_TEXMAP1, GX_COLOR0A0);
+
+		GX_SetTevColorIn(tevstage, GX_CC_ZERO, GX_CC_TEXC, GX_CC_C1, GX_CC_CPREV); 
+		GX_SetTevColorOp(tevstage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+		GX_SetTevOrder(tevstage, GX_TEXCOORD3, GX_TEXMAP1, GX_COLORNULL);
+		tevstage++;
+		}
+
+
+		// setup tev stage 2 to add normal mapped diffuse light
+		GX_SetTevIndirect(
+			tevstage, // tevstage 0 is used to combine normal map and lightmap
+			GX_INDTEXSTAGE0, // ind stage is used to read normal map
+			GX_ITF_8, // texture format 8 bits per channel
+			GX_ITB_STU, // use bias on s and t channels (red and green and blue)
+			GX_ITM_0, // use 3x2 matrix 0
+			GX_ITW_OFF, // do not use texture wrapping
+			GX_ITW_OFF, // do not use texture wrapping
+			GX_FALSE, // don't add in previous coordinates (TODO: are these coordinates or lookup results?)
+			GX_FALSE, // don't use mipmap stuff
+			GX_ITBA_OFF // don't use bump alpha (TODO: can this be used to blend reflection and difuse?)
+			); 
+		GX_SetTevKColorSel(tevstage, GX_TEV_KCSEL_1_8);
+		GX_SetTevColorIn(tevstage, GX_CC_ZERO, GX_CC_KONST, GX_CC_TEXC, GX_CC_CPREV);
+		GX_SetTevColorOp(tevstage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_DIVIDE_2, GX_TRUE, GX_TEVPREV);
+		GX_SetTevOrder(tevstage, GX_TEXCOORD3, GX_TEXMAP2, GX_COLORNULL);
+		tevstage++;
+	
+		// setup number of tev stages
+		GX_SetNumTevStages(tevstage);
+
+
+		// connect textures 
+		GX_LoadTexObj(&texture, GX_TEXMAP0); // normal map
+		GX_LoadTexObj(&light_tex, GX_TEXMAP1); // light map
+		GX_LoadTexObj(&reflectionlight_tex, GX_TEXMAP2); // reflective light map
+		
+/*		guMtxIdentity(model);
+		guMtxTransApply(model, model, lpos.x,lpos.y,lpos.z);
+		guMtxConcat(view,model,modelview);
+
+		GX_LoadPosMtxImm(modelview, GX_PNMTX1);
+		GX_SetCurrentMtx(GX_PNMTX1);
+	    GX_LoadNrmMtxImm(modelview, GX_PNMTX1);
+
+		GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw a Cube
+			GX_Position3f32(-1.0f,-1.0f, 0.0f);
+			GX_Normal3f32  (   0.0f,   0.0f,  1.0f);
+			GX_Normal3f32  (  0.125f,   0.0f,  0.0f);
+			GX_Normal3f32  (   0.0f,  0.125f,  0.0f);
+			GX_TexCoord2f32(0.0f,1.0f);
+
+			GX_Position3f32(-1.0f,1.0f, 0.0f);
+			GX_Normal3f32  (   0.0f,   0.0f,  1.0f);
+			GX_Normal3f32  (  0.125f,   0.0f,  0.0f);
+			GX_Normal3f32  (   0.0f,  0.125f,  0.0f);
+			GX_TexCoord2f32(0.0f,0.0f);
+
+			GX_Position3f32(1.0f,1.0f, 0.0f);
+			GX_Normal3f32  (   0.0f,   0.0f,  1.0f);
+			GX_Normal3f32  (  0.125f,   0.0f,  0.0f);
+			GX_Normal3f32  (   0.0f,  0.125f,  0.0f);
+			GX_TexCoord2f32(1.0f,0.0f);
+
+			GX_Position3f32(1.0f,-1.0f, 0.0f);
+			GX_Normal3f32  (   0.0f,   0.0f,  1.0f);
+			GX_Normal3f32  (  0.125f,   0.0f,  0.0f);
+			GX_Normal3f32  (   0.0f,  0.125f,  0.0f);
+			GX_TexCoord2f32(1.0f,1.0f);
+		GX_End();
+		GX_DrawDone();
+*/
+		u8 idx = 0;
+		for(idx=0; idx<3; idx++) {
+			guMtxIdentity(model);
+			guMtxRotAxisDeg(model, &cubeAxis[idx], rquad);
+			guMtxTransApply(model, model, -2.0f + (idx * 2.0f), 0.0f,-4.0f - (idx * 2.0f));
+	//		guMtxTransApply(model, model, lpos.x,lpos.y,lpos.z-10.0f);
+			guMtxConcat(view,model,modelview);
+			// load the modelview matrix into matrix memory
+	//		GX_LoadPosMtxImm(modelview, GX_PNMTX3);
+
+			GX_LoadPosMtxImm(modelview, GX_PNMTX0);
+			
+			//guMtxInverse(modelview,mvi);
+			//guMtxTranspose(mvi,modelview);
+			GX_LoadNrmMtxImm(modelview, GX_PNMTX0);
+			GX_SetCurrentMtx(GX_PNMTX0);
+
+			// DRAW VERTS
+			GX_Begin(GX_QUADS, GX_VTXFMT0, numverts);
+			for(i=0; i<numverts; i++) {
+				float *vertdata = cubedata[i];
+				float *texdata = &vertdata[3];
+				GX_Position3f32(vertdata[0], vertdata[1], vertdata[2]);
+				GX_Normal3f32  (normals[i].x, normals[i].y,   normals[i].z);
+				GX_Normal3f32  (0.125f*tangents[i].x,  0.125f*tangents[i].y,  0.125f*tangents[i].z);
+				GX_Normal3f32  (0.125f*bitangents[i].x,  0.125f*bitangents[i].y,   0.125f*bitangents[i].z);
+				GX_TexCoord2f32(texdata[0], texdata[1]);
+ 
+			}
+			
+
+/*				GX_Begin(GX_QUADS, GX_VTXFMT0, 24);
+				// voor
+				GX_Position3f32(-1.0f,-1.0f, 1.0f);
+				GX_Normal3f32  (   0.0f,   0.0f,  1.0f);
+				GX_Normal3f32  (  0.125f,   0.0f,  0.0f);
+				GX_Normal3f32  (   0.0f,  0.125f,  0.0f);
+				GX_TexCoord2f32(0.0f,1.0f);
+
+				GX_Position3f32(-1.0f,1.0f,1.0f);
+				GX_Normal3f32  (   0.0f,   0.0f,  1.0f);
+				GX_Normal3f32  (  0.125f,   0.0f,  0.0f);
+				GX_Normal3f32  (   0.0f,  0.125f,  0.0f);
+				GX_TexCoord2f32(0.0f,0.0f);
+
+				GX_Position3f32(1.0f,1.0f,1.0f);
+				GX_Normal3f32  (   0.0f,   0.0f,  1.0f);
+				GX_Normal3f32  (  0.125f,   0.0f,  0.0f);
+				GX_Normal3f32  (   0.0f,  0.125f,  0.0f);
+				GX_TexCoord2f32(1.0f,0.0f);
+
+				GX_Position3f32(1.0f,-1.0f,1.0f);
+				GX_Normal3f32  (   0.0f,   0.0f,  1.0f);
+				GX_Normal3f32  (  0.125f,   0.0f,  0.0f);
+				GX_Normal3f32  (   0.0f,  0.125f,  0.0f);
+				GX_TexCoord2f32(1.0f,1.0f);
+				
+				// achter
+				GX_Position3f32(1.0f,-1.0f,-1.0f);
+				GX_Normal3f32  (   0.0f,   0.0f, -1.0f);
+				GX_Normal3f32  ( -0.125f,   0.0f,  0.0f);
+				GX_Normal3f32  (   0.0f,  0.125f,  0.0f);
+				GX_TexCoord2f32(0.0f,1.0f);
+
+				GX_Position3f32(1.0f,1.0f,-1.0f);
+				GX_Normal3f32  (   0.0f,   0.0f, -1.0f);
+				GX_Normal3f32  ( -0.125f,   0.0f,  0.0f);
+				GX_Normal3f32  (   0.0f,  0.125f,  0.0f);
+				GX_TexCoord2f32(0.0f,0.0f);
+
+				GX_Position3f32(-1.0f,1.0f,-1.0f);
+				GX_Normal3f32  (   0.0f,   0.0f, -1.0f);
+				GX_Normal3f32  ( -0.125f,   0.0f,  0.0f);
+				GX_Normal3f32  (   0.0f,  0.125f,  0.0f);
+				GX_TexCoord2f32(1.0f,0.0f);
+
+				GX_Position3f32(-1.0f,-1.0f,-1.0f);
+				GX_Normal3f32  (   0.0f,   0.0f, -1.0f);
+				GX_Normal3f32  ( -0.125f,   0.0f,  0.0f);
+				GX_Normal3f32  (   0.0f,  0.125f,  0.0f);
+				GX_TexCoord2f32(1.0f,1.0f);
+			
+				// onder
+				GX_Position3f32(-1.0f,-1.0f,-1.0f);
+				GX_Normal3f32  (   0.0f, -1.0f,   0.0f);
+				GX_Normal3f32  (  0.125f,  0.0f,   0.0f);
+				GX_Normal3f32  (   0.0f,  0.0f,  0.125f);
+				GX_TexCoord2f32(0.0f,1.0f);
+
+				GX_Position3f32(-1.0f,-1.0f,1.0f);
+				GX_Normal3f32  (   0.0f, -1.0f,   0.0f);
+				GX_Normal3f32  (  0.125f,  0.0f,   0.0f);
+				GX_Normal3f32  (   0.0f,  0.0f,  0.125f);
+				GX_TexCoord2f32(0.0f,0.0f);
+
+				GX_Position3f32(1.0f,-1.0f,1.0f);
+				GX_Normal3f32  (   0.0f, -1.0f,   0.0f);
+				GX_Normal3f32  (  0.125f,  0.0f,   0.0f);
+				GX_Normal3f32  (   0.0f,  0.0f,  0.125f);
+				GX_TexCoord2f32(1.0f,0.0f);
+
+				GX_Position3f32(1.0f,-1.0f,-1.0f);
+				GX_Normal3f32  (   0.0f, -1.0f,   0.0f);
+				GX_Normal3f32  (  0.125f,  0.0f,   0.0f);
+				GX_Normal3f32  (   0.0f,  0.0f,  0.125f);
+				GX_TexCoord2f32(1.0f,1.0f);
+				
+				// boven
+				GX_Position3f32(1.0f,1.0f,-1.0f);
+				GX_Normal3f32  (   0.0f,  1.0f,   0.0f);
+				GX_Normal3f32  ( -0.125f,  0.0f,   0.0f);
+				GX_Normal3f32  (   0.0f,  0.0f,  0.125f);
+				GX_TexCoord2f32(0.0f,1.0f);
+
+				GX_Position3f32(1.0f,1.0f,1.0f);
+				GX_Normal3f32  (   0.0f,  1.0f,   0.0f);
+				GX_Normal3f32  ( -0.125f,  0.0f,   0.0f);
+				GX_Normal3f32  (   0.0f,  0.0f,  0.125f);
+				GX_TexCoord2f32(0.0f,0.0f);
+
+				GX_Position3f32(-1.0f,1.0f,1.0f);
+				GX_Normal3f32  (   0.0f,  1.0f,   0.0f);
+				GX_Normal3f32  ( -0.125f,  0.0f,   0.0f);
+				GX_Normal3f32  (   0.0f,  0.0f,  0.125f);
+				GX_TexCoord2f32(1.0f,0.0f);
+
+				GX_Position3f32(-1.0f,1.0f,-1.0f);
+				GX_Normal3f32  (   0.0f,  1.0f,   0.0f);
+				GX_Normal3f32  ( -0.125f,  0.0f,   0.0f);
+				GX_Normal3f32  (   0.0f,  0.0f,  0.125f);
+				GX_TexCoord2f32(1.0f,1.0f);
+
+				// links
+				GX_Position3f32( -1.0f,-1.0f,-1.0f);
+				GX_Normal3f32  (  -1.0f,   0.0f,  0.0f);
+				GX_Normal3f32  (   0.0f,   0.0f, 0.125f);
+				GX_Normal3f32  (   0.0f,  0.125f,  0.0f);
+				GX_TexCoord2f32(0.0f,1.0f);
+
+				GX_Position3f32(-1.0f,1.0f,-1.0f);
+				GX_Normal3f32  (  -1.0f,   0.0f,  0.0f);
+				GX_Normal3f32  (   0.0f,   0.0f, 0.125f);
+				GX_Normal3f32  (   0.0f,  0.125f,  0.0f);
+				GX_TexCoord2f32(0.0f,0.0f);
+
+				GX_Position3f32(-1.0f,1.0f,1.0f);
+				GX_Normal3f32  (  -1.0f,   0.0f,  0.0f);
+				GX_Normal3f32  (   0.0f,   0.0f, 0.125f);
+				GX_Normal3f32  (   0.0f,  0.125f,  0.0f);
+				GX_TexCoord2f32(1.0f,0.0f);
+
+				GX_Position3f32(-1.0f,-1.0f,1.0f);
+				GX_Normal3f32  (  -1.0f,   0.0f,  0.0f);
+				GX_Normal3f32  (   0.0f,   0.0f, 0.125f);
+				GX_Normal3f32  (   0.0f,  0.125f,  0.0f);
+				GX_TexCoord2f32(1.0f,1.0f);
+					
+				// rechts
+				GX_Position3f32(1.0f,-1.0f,1.0f);
+				GX_Normal3f32  (   1.0f,   0.0f,   0.0f);
+				GX_Normal3f32  (   0.0f,   0.0f, -0.125f);
+				GX_Normal3f32  (   0.0f,  0.125f,   0.0f);
+				GX_TexCoord2f32(0.0f,1.0f);
+
+				GX_Position3f32(1.0f,1.0f,1.0f);
+				GX_Normal3f32  (   1.0f,   0.0f,   0.0f);
+				GX_Normal3f32  (   0.0f,   0.0f, -0.125f);
+				GX_Normal3f32  (   0.0f,  0.125f,   0.0f);
+				GX_TexCoord2f32(0.0f,0.0f);
+
+				GX_Position3f32(1.0f,1.0f,-1.0f);
+				GX_Normal3f32  (   1.0f,   0.0f,   0.0f);
+				GX_Normal3f32  (   0.0f,   0.0f, -0.125f);
+				GX_Normal3f32  (   0.0f,  0.125f,   0.0f);
+				GX_TexCoord2f32(1.0f,0.0f);
+
+				GX_Position3f32(1.0f,-1.0f,-1.0f);
+				GX_Normal3f32  (   1.0f,   0.0f,   0.0f);
+				GX_Normal3f32  (   0.0f,   0.0f, -0.125f);
+				GX_Normal3f32  (   0.0f,  0.125f,   0.0f);
+				GX_TexCoord2f32(1.0f,1.0f);
+*/
+			GX_End();									// Done Drawing The Quad 
+			GX_Flush(); // Flush
+		}
+		
+		GXColor coln = {0xFF, 0x00, 0x00, 0xFF};
+		GXColor colb = {0x00, 0xFF, 0x00, 0xFF};
+		GXColor colt = {0x00, 0x00, 0xFF, 0xFF};
+		//GX_SetZMode(GX_ENABLE, GX_ALWAYS, GX_FALSE); 
+		GX_ClearVtxDesc();
+		GX_SetVtxDesc(GX_VA_POS, GX_DIRECT);
+		
+		GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
+
+		GX_InvVtxCache();
+
+		tevstage = 0;
+		GX_SetTevColorIn(tevstage, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_C1); // !!!! check nog ff tevprev 
+		GX_SetTevColorOp(tevstage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+		GX_SetTevOrder(tevstage, GX_TEXCOORDNULL, GX_TEXMAP_DISABLE, GX_COLORNULL);
+		tevstage++;
+
+		GX_SetNumTevStages(tevstage);
+		
+		
+		for(idx=0; idx<3; idx++) {
+			guMtxIdentity(model);
+			guMtxRotAxisDeg(model, &cubeAxis[idx], rquad);
+			guMtxTransApply(model, model, -2.0f + (idx * 2.0f), 0.0f,-4.0f - (idx * 2.0f));
+	//		guMtxTransApply(model, model, lpos.x,lpos.y,lpos.z-10.0f);
+			guMtxConcat(view,model,modelview);
+			// load the modelview matrix into matrix memory
+	//		GX_LoadPosMtxImm(modelview, GX_PNMTX3);
+
+			GX_LoadPosMtxImm(modelview, GX_PNMTX0);
+			
+			//guMtxInverse(modelview,mvi);
+			//guMtxTranspose(mvi,modelview);
+			GX_LoadNrmMtxImm(modelview, GX_PNMTX0);
+			GX_SetCurrentMtx(GX_PNMTX0);
+		
+			for(i=0; i<numverts; i++) {
+			
+				float *vertdata = cubedata[i];
+			
+				GX_SetTevColor(GX_TEVREG1, coln);
+				GX_Begin(GX_LINESTRIP, GX_VTXFMT1, 2);
+				GX_Position3f32(vertdata[0], vertdata[1], vertdata[2]);
+				GX_Position3f32(vertdata[0] + normals[i].x , vertdata[1] + normals[i].y, vertdata[2] + normals[i].z);
+				GX_End();
+
+				GX_SetTevColor(GX_TEVREG1, colb);
+				GX_Begin(GX_LINESTRIP, GX_VTXFMT1, 2);
+				GX_Position3f32(vertdata[0], vertdata[1], vertdata[2]);
+				GX_Position3f32(vertdata[0] + bitangents[i].x , vertdata[1] + bitangents[i].y, vertdata[2] + bitangents[i].z);
+				GX_End();
+
+				GX_SetTevColor(GX_TEVREG1, colt);
+				GX_Begin(GX_LINESTRIP, GX_VTXFMT1, 2);
+				GX_Position3f32(vertdata[0], vertdata[1], vertdata[2]);
+				GX_Position3f32(vertdata[0] + tangents[i].x , vertdata[1] + tangents[i].y, vertdata[2] + tangents[i].z);
+				GX_End();
+			}
+		}
+		GX_Flush(); // Flush
+	
+		GX_SetAlphaUpdate(GX_TRUE);
+
+		GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
+		GX_SetColorUpdate(GX_TRUE);
+		GX_CopyDisp(frameBuffer[fb],GX_TRUE);
+
+		GX_DrawDone();
+
+		VIDEO_SetNextFramebuffer(frameBuffer[fb]);
+		if(first_frame) {
+			first_frame = 0;
+			VIDEO_SetBlack(FALSE);
+		}
+		VIDEO_Flush();
+ 		if (vsync) VIDEO_WaitVSync();
+		fb ^= 1;
+
+		rquad -= 0.15f;				// Decrease The Rotation Variable For The Quad     ( NEW )
+	}
+}

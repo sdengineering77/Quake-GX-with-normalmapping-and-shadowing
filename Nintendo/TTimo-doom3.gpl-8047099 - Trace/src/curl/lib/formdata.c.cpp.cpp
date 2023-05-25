@@ -1,0 +1,540 @@
+/***************************************************************************
+ *                                  _   _ ____  _     
+ *  Project                     ___| | | |  _ \| |    
+ *                             / __| | | | |_) | |    
+ *                            | (__| |_| |  _ <| |___ 
+ *                             \___|\___/|_| \_\_____|
+ *
+ * Copyright (C) 1998 - 2004, Daniel Stenberg, <daniel@haxx.se>, et al.
+ *
+ * This software is licensed as described in the file COPYING, which
+ * you should have received as part of this distribution. The terms
+ * are also available at http://curl.haxx.se/docs/copyright.html.
+ * 
+ * You may opt to use, copy, modify, merge, publish, distribute and/or sell
+ * copies of the Software, and permit persons to whom the Software is
+ * furnished to do so, under the terms of the COPYING file.
+ *
+ * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
+ * KIND, either express or implied.
+ *
+ * $Id: formdata.c,v 1.56 2004/03/12 14:22:16 bagder Exp $
+ ***************************************************************************/
+
+/*
+  Debug the form generator stand-alone by compiling this source file with:
+
+  gcc -DHAVE_CONFIG_H -I../ -g -D_FORM_DEBUG -o formdata -I../include formdata.c strequal.c
+
+  run the 'formdata' executable the output should end with:
+  All Tests seem to have worked ...
+  and the following parts should be there:
+
+Content-Disposition: form-data; name="simple_COPYCONTENTS"
+value for simple COPYCONTENTS
+
+Content-Disposition: form-data; name="COPYCONTENTS_+_CONTENTTYPE"
+Content-Type: image/gif
+value for COPYCONTENTS + CONTENTTYPE
+
+Content-Disposition: form-data; name="PRNAME_+_NAMELENGTH_+_COPYNAME_+_CONTENTSLENGTH"
+vlue for PTRNAME + NAMELENGTH + COPYNAME + CONTENTSLENGTH
+(or you might see P^@RNAME and v^@lue at the start)
+
+Content-Disposition: form-data; name="simple_PTRCONTENTS"
+value for simple PTRCONTENTS
+
+Content-Disposition: form-data; name="PTRCONTENTS_+_CONTENTSLENGTH"
+vlue for PTRCONTENTS + CONTENTSLENGTH
+(or you might see v^@lue at the start)
+
+Content-Disposition: form-data; name="PTRCONTENTS_+_CONTENTSLENGTH_+_CONTENTTYPE"
+Content-Type: text/plain
+vlue for PTRCOTNENTS + CONTENTSLENGTH + CONTENTTYPE
+(or you might see v^@lue at the start)
+
+Content-Disposition: form-data; name="FILE1_+_CONTENTTYPE"; filename="inet_ntoa_r.h"
+Content-Type: text/html
+...
+
+Content-Disposition: form-data; name="FILE1_+_FILE2"
+Content-Type: multipart/mixed, boundary=curlz1s0dkticx49MV1KGcYP5cvfSsz
+...
+Content-Disposition: attachment; filename="inet_ntoa_r.h"
+Content-Type: text/plain
+...
+Content-Disposition: attachment; filename="Makefile.b32.resp"
+Content-Type: text/plain
+...
+
+Content-Disposition: form-data; name="FILE1_+_FILE2_+_FILE3"
+Content-Type: multipart/mixed, boundary=curlirkYPmPwu6FrJ1vJ1u1BmtIufh1
+...
+Content-Disposition: attachment; filename="inet_ntoa_r.h"
+Content-Type: text/plain
+...
+Content-Disposition: attachment; filename="Makefile.b32.resp"
+Content-Type: text/plain
+...
+Content-Disposition: attachment; filename="inet_ntoa_r.h"
+Content-Type: text/plain
+...
+
+
+Content-Disposition: form-data; name="ARRAY: FILE1_+_FILE2_+_FILE3"
+Content-Type: multipart/mixed, boundary=curlirkYPmPwu6FrJ1vJ1u1BmtIufh1
+...
+Content-Disposition: attachment; filename="inet_ntoa_r.h"
+Content-Type: text/plain
+...
+Content-Disposition: attachment; filename="Makefile.b32.resp"
+Content-Type: text/plain
+...
+Content-Disposition: attachment; filename="inet_ntoa_r.h"
+Content-Type: text/plain
+...
+
+Content-Disposition: form-data; name="FILECONTENT"
+...
+
+  For the old FormParse used by curl_formparse use:
+
+  gcc -DHAVE_CONFIG_H -I../ -g -D_OLD_FORM_DEBUG -o formdata -I../include formdata.c strequal.c
+
+  run the 'formdata' executable and make sure the output is ok!
+
+  try './formdata "name=Daniel" "poo=noo" "foo=bar"' and similarly
+
+ */
+
+#include "setup.h"
+
+#ifndef CURL_DISABLE_HTTP
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+
+#include <time.h>
+
+#ifndef CURL_OLDSTYLE 
+#define CURL_OLDSTYLE 1 /* enable deprecated prototype for curl_formparse */
+#endif
+#include <curl/curl.h>
+#include "formdata.h"
+
+#include "strequal.h"
+
+/* The last #include file should be: */
+#ifdef CURLDEBUG
+#include "memdebug.h"
+#endif
+
+/* Length of the random boundary string. */
+#define BOUNDARY_LENGTH 40
+
+/* What kind of Content-Type to use on un-specified files with unrecognized
+   extensions. */
+#define HTTPPOST_CONTENTTYPE_DEFAULT "application/octet-stream"
+
+/* This is a silly duplicate of the function in main.c to enable this source
+   to compile stand-alone for better debugging */
+static void GetStr(char **string,
+		   const char *value)
+{
+    SYS_Printf("void GetStr(char **string,   const char *value)\r\n");
+}
+
+
+
+/***************************************************************************
+ *
+ * FormParse()
+ *	
+ * Reads a 'name=value' paramter and builds the appropriate linked list.
+ *
+ * Specify files to upload with 'name=@filename'. Supports specified
+ * given Content-Type of the files. Such as ';type=<content-type>'.
+ *
+ * You may specify more than one file for a single name (field). Specify
+ * multiple files by writing it like:
+ *
+ * 'name=@filename,filename2,filename3'
+ *
+ * If you want content-types specified for each too, write them like:
+ *
+ * 'name=@filename;type=image/gif,filename2,filename3'
+ *
+ ***************************************************************************/
+
+#define FORM_FILE_SEPARATOR ','
+#define FORM_TYPE_SEPARATOR ';'
+
+static
+int FormParse(char *input,
+	      struct curl_httppost **httppost,
+	      struct curl_httppost **last_post)
+{
+    int  retVal;
+    memset(&retVal, 0, sizeof(int));
+    SYS_Printf("int FormParse(char *input,      struct curl_httppost **httppost,      struct curl_httppost **last_post)\r\n");
+    return retVal;
+}
+
+
+
+int curl_formparse(char *input,
+                   struct curl_httppost **httppost,
+                   struct curl_httppost **last_post)
+{
+    int  retVal;
+    memset(&retVal, 0, sizeof(int));
+    SYS_Printf("int curl_formparse(char *input,                   struct curl_httppost **httppost,                   struct curl_httppost **last_post)\r\n");
+    return retVal;
+}
+
+
+
+/***************************************************************************
+ *
+ * AddHttpPost()
+ *	
+ * Adds a HttpPost structure to the list, if parent_post is given becomes
+ * a subpost of parent_post instead of a direct list element.
+ *
+ * Returns newly allocated HttpPost on success and NULL if malloc failed.
+ *
+ ***************************************************************************/
+static struct curl_httppost *
+AddHttpPost(char * name, size_t namelength,
+            char * value, size_t contentslength,
+            char * buffer, size_t bufferlength,
+            char *contenttype,
+            long flags,
+            struct curl_slist* contentHeader,
+            char *showfilename,
+            struct curl_httppost *parent_post,
+            struct curl_httppost **httppost,
+            struct curl_httppost **last_post)
+{
+    SYS_Printf("curl_httppost *AddHttpPost(char * name, size_t namelength,            char * value, size_t contentslength,            char * buffer, size_t bufferlength,            char *contenttype,            long flags,            struct curl_slist* contentHeader,            char *showfilename,            struct curl_httppost *parent_post,            struct curl_httppost **httppost,            struct curl_httppost **last_post)\r\n");
+    return NULL;
+}
+
+
+
+/***************************************************************************
+ *
+ * AddFormInfo()
+ *	
+ * Adds a FormInfo structure to the list presented by parent_form_info.
+ *
+ * Returns newly allocated FormInfo on success and NULL if malloc failed/
+ * parent_form_info is NULL.
+ *
+ ***************************************************************************/
+static FormInfo * AddFormInfo(char *value,
+                              char *contenttype,
+                              FormInfo *parent_form_info)
+{
+    SYS_Printf("FormInfo * AddFormInfo(char *value,                              char *contenttype,                              FormInfo *parent_form_info)\r\n");
+    return NULL;
+}
+
+
+
+/***************************************************************************
+ *
+ * ContentTypeForFilename()
+ *	
+ * Provides content type for filename if one of the known types (else
+ * (either the prevtype or the default is returned).
+ *
+ * Returns some valid contenttype for filename.
+ *
+ ***************************************************************************/
+static const char * ContentTypeForFilename (const char *filename,
+					    const char *prevtype)
+{
+  const char *contenttype = NULL;
+  unsigned int i;
+  /*
+   * No type was specified, we scan through a few well-known
+   * extensions and pick the first we match!
+   */
+  struct ContentType {
+    const char *extension;
+    const char *type;
+  };
+  static struct ContentType ctts[]={
+    {".gif",  "image/gif"},
+    {".jpg",  "image/jpeg"},
+    {".jpeg", "image/jpeg"},
+    {".txt",  "text/plain"},
+    {".html", "text/html"}
+  };
+  
+  if(prevtype)
+    /* default to the previously set/used! */
+    contenttype = prevtype;
+  else
+    /* It seems RFC1867 defines no Content-Type to default to
+       text/plain so we don't actually need to set this: */
+    contenttype = HTTPPOST_CONTENTTYPE_DEFAULT;
+  
+  for(i=0; i<sizeof(ctts)/sizeof(ctts[0]); i++) {
+    if(strlen(filename) >= strlen(ctts[i].extension)) {
+      if(strequal(filename +
+		  strlen(filename) - strlen(ctts[i].extension),
+		  ctts[i].extension)) {
+	contenttype = ctts[i].type;
+	break;
+      }	      
+    }
+  }
+  /* we have a contenttype by now */
+  return contenttype;
+}
+
+/***************************************************************************
+ *
+ * AllocAndCopy()
+ *	
+ * Copies the data currently available under *buffer using newly allocated
+ * buffer (that becomes *buffer). Uses buffer_length if not null, else
+ * uses strlen to determine the length of the buffer to be copied
+ *
+ * Returns 0 on success and 1 if the malloc failed.
+ *
+ ***************************************************************************/
+static int AllocAndCopy(char **buffer, size_t buffer_length)
+{
+    int  retVal;
+    memset(&retVal, 0, sizeof(int));
+    SYS_Printf("int AllocAndCopy(char **buffer, size_t buffer_length)\r\n");
+    return retVal;
+}
+
+
+
+/***************************************************************************
+ *
+ * FormAdd()
+ *	
+ * Stores a 'name=value' formpost parameter and builds the appropriate
+ * linked list.
+ *
+ * Has two principal functionalities: using files and byte arrays as
+ * post parts. Byte arrays are either copied or just the pointer is stored
+ * (as the user requests) while for files only the filename and not the
+ * content is stored.
+ *
+ * While you may have only one byte array for each name, multiple filenames
+ * are allowed (and because of this feature CURLFORM_END is needed after
+ * using CURLFORM_FILE).
+ *
+ * Examples:
+ *
+ * Simple name/value pair with copied contents:
+ * curl_formadd (&post, &last, CURLFORM_COPYNAME, "name",
+ * CURLFORM_COPYCONTENTS, "value", CURLFORM_END);
+ *
+ * name/value pair where only the content pointer is remembered:
+ * curl_formadd (&post, &last, CURLFORM_COPYNAME, "name",
+ * CURLFORM_PTRCONTENTS, ptr, CURLFORM_CONTENTSLENGTH, 10, CURLFORM_END);
+ * (if CURLFORM_CONTENTSLENGTH is missing strlen () is used)
+ *
+ * storing a filename (CONTENTTYPE is optional!):
+ * curl_formadd (&post, &last, CURLFORM_COPYNAME, "name",
+ * CURLFORM_FILE, "filename1", CURLFORM_CONTENTTYPE, "plain/text",
+ * CURLFORM_END);
+ *
+ * storing multiple filenames:
+ * curl_formadd (&post, &last, CURLFORM_COPYNAME, "name",
+ * CURLFORM_FILE, "filename1", CURLFORM_FILE, "filename2", CURLFORM_END);
+ *
+ * Returns:
+ * CURL_FORMADD_OK             on success
+ * CURL_FORMADD_MEMORY         if the FormInfo allocation fails
+ * CURL_FORMADD_OPTION_TWICE   if one option is given twice for one Form
+ * CURL_FORMADD_NULL           if a null pointer was given for a char
+ * CURL_FORMADD_MEMORY         if the allocation of a FormInfo struct failed
+ * CURL_FORMADD_UNKNOWN_OPTION if an unknown option was used
+ * CURL_FORMADD_INCOMPLETE     if the some FormInfo is not complete (or an error)
+ * CURL_FORMADD_MEMORY         if a HttpPost struct cannot be allocated
+ * CURL_FORMADD_MEMORY         if some allocation for string copying failed.
+ * CURL_FORMADD_ILLEGAL_ARRAY  if an illegal option is used in an array
+ *
+ ***************************************************************************/
+
+static
+CURLFORMcode FormAdd(struct curl_httppost **httppost,
+                     struct curl_httppost **last_post,
+                     va_list params)
+{
+    CURLFORMcode  retVal;
+    memset(&retVal, 0, sizeof(CURLFORMcode));
+    SYS_Printf("CURLFORMcode FormAdd(struct curl_httppost **httppost,                     struct curl_httppost **last_post,                     va_list params)\r\n");
+    return retVal;
+}
+
+
+
+CURLFORMcode curl_formadd(struct curl_httppost **httppost,
+                 struct curl_httppost **last_post,
+                 ...)
+{
+  va_list arg;
+  CURLFORMcode result;
+  va_start(arg, last_post);
+  result = FormAdd(httppost, last_post, arg);
+  va_end(arg);
+  return result;
+}
+
+static size_t AddFormData(struct FormData **formp,
+                          const void *line,
+                          size_t length)
+{
+    size_t  retVal;
+    memset(&retVal, 0, sizeof(size_t));
+    SYS_Printf("size_t AddFormData(struct FormData **formp,                          const void *line,                          size_t length)\r\n");
+    return retVal;
+}
+
+
+
+
+static size_t AddFormDataf(struct FormData **formp,
+                        const char *fmt, ...)
+{
+  char s[4096];
+  va_list ap;
+  va_start(ap, fmt);
+  vsprintf(s, fmt, ap);
+  va_end(ap);
+
+  return AddFormData(formp, s, 0);
+}
+
+
+char *Curl_FormBoundary(void)
+{
+    SYS_Printf("char *Curl_FormBoundary(void)\r\n");
+    return NULL;
+}
+
+
+
+/* Used from http.c, this cleans a built FormData linked list */ 
+void Curl_formclean(struct FormData *form)
+{
+    SYS_Printf("void Curl_formclean(struct FormData *form)\r\n");
+}
+
+
+
+/* external function to free up a whole form post chain */
+void curl_formfree(struct curl_httppost *form)
+{
+    SYS_Printf("void curl_formfree(struct curl_httppost *form)\r\n");
+}
+
+
+
+CURLcode Curl_getFormData(struct FormData **finalform,
+                          struct curl_httppost *post,
+                          curl_off_t *sizep)
+{
+    CURLcode  retVal;
+    memset(&retVal, 0, sizeof(CURLcode));
+    SYS_Printf("CURLcode Curl_getFormData(struct FormData **finalform,                          struct curl_httppost *post,                          curl_off_t *sizep)\r\n");
+    return retVal;
+}
+
+
+
+int Curl_FormInit(struct Form *form, struct FormData *formdata )
+{
+    int  retVal;
+    memset(&retVal, 0, sizeof(int));
+    SYS_Printf("int Curl_FormInit(struct Form *form, struct FormData *formdata )\r\n");
+    return retVal;
+}
+
+
+
+/* fread() emulation */
+size_t Curl_FormReader(char *buffer,
+                       size_t size,
+                       size_t nitems,
+                       FILE *mydata)
+{
+    size_t  retVal;
+    memset(&retVal, 0, sizeof(size_t));
+    SYS_Printf("size_t Curl_FormReader(char *buffer,                       size_t size,                       size_t nitems,                       FILE *mydata)\r\n");
+    return retVal;
+}
+
+
+
+/* possible (old) fread() emulation that copies at most one line */
+size_t Curl_FormReadOneLine(char *buffer,
+                            size_t size,
+                            size_t nitems,
+                            FILE *mydata)
+{
+    size_t  retVal;
+    memset(&retVal, 0, sizeof(size_t));
+    SYS_Printf("size_t Curl_FormReadOneLine(char *buffer,                            size_t size,                            size_t nitems,                            FILE *mydata)\r\n");
+    return retVal;
+}
+
+
+
+
+#ifdef _FORM_DEBUG
+int FormAddTest(const char * errormsg,
+                 struct curl_httppost **httppost,
+                 struct curl_httppost **last_post,
+                 ...)
+{
+  int result;
+  va_list arg;
+  va_start(arg, last_post);
+  if ((result = FormAdd(httppost, last_post, arg)))
+    fprintf (stderr, "ERROR doing FormAdd ret: %d action: %s\n", result,
+             errormsg);
+  va_end(arg);
+  return result;
+}
+
+
+int main()
+{
+    int  retVal;
+    memset(&retVal, 0, sizeof(int));
+    SYS_Printf("int main()\r\n");
+    return retVal;
+}
+
+
+
+#endif
+
+#ifdef _OLD_FORM_DEBUG
+
+int main(int argc, char **argv)
+{
+    int  retVal;
+    memset(&retVal, 0, sizeof(int));
+    SYS_Printf("int main(int argc, char **argv)\r\n");
+    return retVal;
+}
+
+
+
+#endif
+
+#endif /* CURL_DISABLE_HTTP */

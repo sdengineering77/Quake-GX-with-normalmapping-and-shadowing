@@ -1,0 +1,201 @@
+#ifdef GXGL
+
+#include <system.h>
+#include "quakedef.h"
+
+
+static byte 	*shadowtexbuf;
+static GXTexObj	shadowtexobj;
+
+void R_SetupFrame(void);
+void R_SetFrustum(void);
+void R_SetupGL(void);
+void R_MarkLeaves(void);
+void R_MarkEntitiesOnList(void);
+void R_DrawAmbientEntities(void);
+
+void GX_LoadGLModelView(void);
+
+/*
+================
+void SHADOW_InitTex(int width, int height)
+
+DRS TODO: Not so happy with this, need relocate?
+================
+*/
+void SHADOW_InitTex(int width, int height) {
+	shadowtexbuf = (byte *) align32(malloc(width * height+32)); // 8bpp
+	GX_InitTexObj(&shadowtexobj, shadowtexbuf, width, height, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	
+}
+
+
+/*
+================
+R_RenderScene
+
+r_refdef must be set before the first call
+DRS: modified for GX
+================
+*/
+void R_RenderScene (void)
+{
+	int i, scizzX, scizzY, scizzW,scizzH;
+	shadowlight_t *l = NULL;
+	
+	R_SetupFrame ();
+	R_SetFrustum ();
+
+	R_SetupGL ();
+
+	R_MarkLeaves ();	// done here so we know if we're in water, gaat visible leafs marken
+
+	//if (!mirror)
+	R_InitShadowsForFrame ();
+
+	R_InitDrawWorld();
+
+	//if (!mirror) {
+		//To ensure invariance we have to enable scissoring even for the ambient term
+		//But in reality this doen't work (at least on my Geforce2 card) and you still
+		//get (few) z-buffer fighting.
+	if (!sh_noscissor.value) {
+		GX_SetScissor(r_Iviewport[0], r_Iviewport[1], r_Iviewport[2], r_Iviewport[3]);
+	}
+
+	//Ambient light drawing
+	//this uses the light maps as an ambient term
+    //it fills the z buffer
+	R_SetupInstants();
+
+	GX_SetupGLRender();
+	GX_LoadGLModelView();
+
+	//	DRS TODO R_DrawViewModel();
+	R_DrawAmbientEntities();
+
+	GX_LoadGLModelView();
+	R_WorldMultiplyTextures();
+
+	numClearsSaved = 0;
+	aliasCacheRequests = aliasFullCacheHits = aliasPartialCacheHits = 0;
+	brushCacheRequests = brushFullCacheHits = brushPartialCacheHits = 0;
+
+	// DRS TODO: fog? glFogfv(GL_FOG_COLOR, color_black);
+//Sys_Printf(">>>>> lighting\n");
+	for (i=0; i<numUsedShadowLights; i++) {
+
+		// DRS: don't bother finding a light that fits the unused stencil space as we'll clear when export to texture
+		l = usedshadowlights[i];
+		currentshadowlight = l;
+
+		//Find the polygons that cast shadows for this light
+		if (!R_FillShadowChain(l)) {
+			continue;
+		}
+//Sys_Printf("light %p pos %4.1f %4.1f %4.1f radius %4.1f static %d OK\n", currentshadowlight, 
+//	currentshadowlight->origin[0], 
+//	currentshadowlight->origin[1], 
+//	currentshadowlight->origin[2], 
+//	currentshadowlight->radius,
+//	currentshadowlight->isStatic);
+
+		//All right now the shadow stuff
+
+//Sys_Printf("scizzcoords %f %f %f %f\n", (float) l->scizz.coords[0], (float) l->scizz.coords[1],
+//			(float) l->scizz.coords[2]-l->scizz.coords[0],  (float) l->scizz.coords[3]-l->scizz.coords[1]);
+		scizzX = l->scizz.coords[0];
+		scizzY = l->scizz.coords[1]; 
+		scizzW = l->scizz.coords[2]-l->scizz.coords[0];// + 1) & 0xFFFFFFFE; // DRS make it a multiple of 2 for texgrab
+		scizzH = l->scizz.coords[3]-l->scizz.coords[1];// + 1) & 0xFFFFFFFE;
+		GX_SetScissor(scizzX, scizzY, scizzW, scizzH);
+
+		R_MarkEntitiesOnList();
+
+		//Shadow casting is on by default
+		if (l->castShadow)
+		{
+		    //Calculate the shadow volume (does nothing when static)
+		    R_ConstructShadowVolume(l);
+
+// DRS TODO: shadows
+			//Pass 1 increase
+			GX_LoadGLModelView();
+			if (sh_worldshadows.value) {
+				GX_InitShadowShader(true);
+				R_DrawShadowVolume(l);
+
+				// Second Pass. Decrease Stencil Value In The Shadow
+				GX_InitShadowShader(false);
+				R_DrawShadowVolume(l);
+			}
+			//PENTA: we could do the same thing for brushes as for aliasses
+			//Pass 1 increase
+			if (sh_entityshadows.value) { 
+				GX_InitShadowShader(true);
+				R_DrawEntitiesShadowVolumes(mod_brush);
+			
+				// Second Pass. Decrease Stencil Value In The Shadow
+				GX_InitShadowShader(false);
+				R_DrawEntitiesShadowVolumes(mod_brush);
+			}
+		
+// DRS TODO
+//		    if (sh_entityshadows.value)
+//					GX_LoadGLModelView(); R_DrawEntitiesShadowVolumes(mod_alias);
+			
+			// DRS grab fb, load texture
+//Sys_Printf("x %d y %d w %d h %d\n", scizzX, scizzY, scizzW, scizzH);			
+			GX_GrabEFB(scizzX, scizzY, scizzW, scizzH, GX_CTF_A8, GX_TRUE, GX_FALSE, 1, shadowtexbuf);
+//			GX_GrabEFB(0, 0, 640, 480, GX_CTF_A8, GX_TRUE, GX_FALSE, 1, shadowtexbuf);
+//			GX_InitTexObj(&shadowtexobj, shadowtexbuf, scizzW, scizzH, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+			GX_LoadTexObj(&shadowtexobj, GX_TEXMAP5);
+			GX_InvalidateTexAll();
+		}
+		
+		if (!sh_visiblevolumes.value) {
+			GX_LoadGLModelView();
+			R_DrawWorldBumped();
+			// Z-buffer offset not available in GX glPolygonOffset(0,-5);
+			R_DrawLightEntities(l);
+		}
+
+		if (!sh_visiblevolumes.value) {
+//	DRS TODO			R_DrawLightSprites ();
+		}
+
+		if ((i%8) == 0) 
+			// don't let sound get messed up if going slow
+			S_ExtraUpdate ();	
+
+		l->visible = false;
+	}
+
+	GX_SetScissor(0, 0, r_Iviewport[2], r_Iviewport[3]);
+
+	// DRS TODO: fog? glFogfv(GL_FOG_COLOR, color_black);
+
+	// DRS TODO R_DrawFullbrightSprites();
+	
+	if (skytexturenum >= 0) {
+		// DRS TODO glColor3f(1,1,1);
+		// DRS TODO R_DrawSkyChain (cl.worldmodel->textures[skytexturenum]->texturechain);
+		cl.worldmodel->textures[skytexturenum]->texturechain = NULL;
+	}
+
+
+	// DRS TODO R_DrawCaustics();
+
+	//Removed to fix particle & water bug (see R_RenderView) - Eradicator
+	//R_DrawParticles (); //to fix the particles triangles showing up after water
+						//put this behind the water drawing#ifdef GLTEST
+	// DRS TODO R_DrawDecals();
+
+	// DRS TODO again... fog... perhaps black color is just disabling it? glFogfv(GL_FOG_COLOR, fog_color);
+	
+}
+
+
+
+#endif
+

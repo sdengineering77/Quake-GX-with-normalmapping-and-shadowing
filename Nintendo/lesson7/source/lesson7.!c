@@ -1,0 +1,825 @@
+/*---------------------------------------------------------------------------------
+
+	nehe lesson 6 port to GX by shagkur
+
+---------------------------------------------------------------------------------*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <malloc.h>
+#include <math.h>
+#include <gccore.h>
+#include <wiiuse/wpad.h>
+
+#include "crate_tpl.h"
+#include "crate.h"
+
+#define DEFAULT_FIFO_SIZE	(256*1024)
+
+#define _SHIFTL(v, s, w)	\
+    ((u32) (((u32)(v) & ((0x01 << (w)) - 1)) << (s)))
+#define _SHIFTR(v, s, w)	\
+    ((u32)(((u32)(v) >> (s)) & ((0x01 << (w)) - 1)))
+
+#define GX_LOAD_BP_REG(x)				\
+	do {								\
+		FIFO_PUTU8(0x61);				\
+		FIFO_PUTU32((x));				\
+	} while(0)
+
+
+
+static GXRModeObj *rmode = NULL;
+static void *frameBuffer[2] = { NULL, NULL};
+static GXTexObj tex_NxNy;
+static GXTexObj tex_Nz;
+static GXTexObj tex_dotresult;
+
+static Mtx view; // view and perspective matrices
+static Mtx model, modelinverse, modelview, mvi;
+static Mtx44 perspective;
+
+static GXColor litcolors[] = {
+        { 0xFF, 0xFF, 0xFF, 0xFF }, // Light color 1
+        { 0x00, 0x00, 0x00, 0xFF }, // Ambient 1
+        { 0xFF, 0xFF, 0xFF, 0xFF }  // Material 1
+};
+
+float cubedata[][5] = {
+	// voor
+//	{-1.0f,-1.0f, 1.0f, 0.0f,0.0f},
+//	{-1.0f,1.0f,1.0f, 0.0f,1.0f},
+//	{1.0f,1.0f,1.0f, 1.0f,1.0f},
+//	{1.0f,-1.0f,1.0f, 1.0f,0.0f},
+	{-1.0f,-1.0f, 1.0f, 0.0f,1.0f},
+	{-1.0f,1.0f,1.0f, 0.0f,0.0f},
+	{1.0f,1.0f,1.0f, 1.0f,0.0f},
+	{1.0f,-1.0f,1.0f, 1.0f,1.0f},
+	
+	// achter
+	{1.0f,-1.0f,-1.0f, 0.0f,1.0f},
+	{1.0f,1.0f,-1.0f, 0.0f,0.0f},
+	{-1.0f,1.0f,-1.0f, 1.0f,0.0f},
+	{-1.0f,-1.0f,-1.0f, 1.0f,1.0f},
+
+/*	// onder
+	{-1.0f,-1.0f,-1.0f, 0.0f,1.0f},
+	{-1.0f,-1.0f,1.0f, 0.0f,0.0f},
+	{1.0f,-1.0f,1.0f, 1.0f,0.0f},
+	{1.0f,-1.0f,-1.0f, 1.0f,1.0f},
+				
+	// boven
+	{1.0f,1.0f,-1.0f, 0.0f,1.0f},
+	{1.0f,1.0f,1.0f, 0.0f,0.0f},
+	{-1.0f,1.0f,1.0f, 1.0f,0.0f},
+	{-1.0f,1.0f,-1.0f,1.0f,1.0f},
+*/
+	// links
+	{-1.0f,-1.0f,-1.0f, 0.0f,1.0f},
+	{-1.0f,1.0f,-1.0f, 0.0f,0.0f},
+	{-1.0f,1.0f,1.0f, 1.0f,0.0f},
+	{-1.0f,-1.0f,1.0f, 1.0f,1.0f},
+					
+	// rechts
+	{1.0f,-1.0f,1.0f, 0.0f,1.0f},
+	{1.0f,1.0f,1.0f, 0.0f,0.0f},
+	{1.0f,1.0f,-1.0f, 1.0f,0.0f},	
+	{1.0f,-1.0f,-1.0f, 1.0f,1.0f}
+
+};
+
+
+void GL_CreateTubeTex(GXTexObj *texObj1, GXTexObj *texObj2) {
+	u16 texbuf1[128*128];
+	u8   texbuf2[128*128];
+	s16 x, y;
+	float height = 64;
+	memset(&texbuf1[0], 0x00, 128*128*2);
+	memset(&texbuf2[0], 0x00, 128*128);
+	for (y=-64; y<64; y++) {
+		for (x=-64; x<64; x++) {
+			float vect_x = (((x+64)*8)%128)-64;
+			float vect_y = 0; // -y
+			float vect_z = height;
+			float lengthInv = 1.0f/sqrtf(vect_x*vect_x+vect_y*vect_y + height*height);
+			vect_x = vect_x*lengthInv;
+			vect_y = vect_y*lengthInv;
+			vect_z = vect_z*lengthInv;
+// flip?
+			u8 u = ((u8) (128 + (127.0f * vect_x))); // hor
+			u8 v = ((u8) (128 + (127.0f * vect_y))); // ver
+			u8 w = ((u8) (128 + (127.0f * vect_z))); // height
+			texbuf1[(x+64) + (y+64)*128] = (u<<8|v);
+			texbuf2[(x+64) + (y+64)*128] = w;
+		}
+	}
+
+
+	u16 *buf1 = (u16 *) memalign(32, 128*128*2);
+	u16 *bufptr1 = buf1; 
+	u8 *buf2 = (u8 *) memalign(32, 128*128);
+	u8 *bufptr2 = buf2; 
+
+	for(y=0; y<128; y+=4) {
+		for(x=0; x<128; x+=4) {
+			int xx, yy;
+			for (yy=0; yy<4; yy++) {
+				for (xx=0; xx<4; xx++) {
+					bufptr1[xx + yy * 4]  = texbuf1[x + xx + (y + yy)*128];
+				}
+			}
+			bufptr1 += 16; 
+		}
+	}
+
+	for(y=0; y<128; y+=4) {
+		for(x=0; x<128; x+=8) {
+			int xx, yy;
+			for (yy=0; yy<4; yy++) {
+				for (xx=0; xx<8; xx++) {
+					bufptr2[xx + yy * 8]  = texbuf2[x + xx + (y + yy)*128];
+				}
+			}
+			bufptr2 += 32; 
+		}
+	}
+
+	GX_InitTexObj(texObj1, buf1, 128, 128, GX_TF_IA8, GX_CLAMP, GX_CLAMP, GX_TRUE);
+	GX_InitTexObj(texObj2, buf2, 128, 128, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_TRUE);
+	//GX_InitTexObjLOD(texObj,GX_LINEAR,GX_LINEAR, 1, 1, 0.0f, GX_TC_GE, GX_TRUE, GX_ANISO_1);
+	DCFlushRange(buf1, 128*128*2);
+	DCFlushRange(buf2, 128*128);
+
+}
+
+void GL_CreateLightBulbTexI8(GXTexObj *texLightDir) {
+	u8 texbuf[128*128];
+	s16 x, y;
+//	float height = 2;
+	u8 *buf = (u8 *) memalign(32, 128*128);
+	memset(&texbuf[0], 0x00, 128*128);
+//	for (y=-32; y<32; y++) {
+//		for (x=-32; x<32; x++) {
+	s16 fact = 16;
+	for (y=0; y<fact; y++) {
+		for (x=0; x<fact; x++) {
+			float vect_x = -x;
+			float vect_y = -y;
+			// bulb
+			float lengthf = sqrtf(vect_x*vect_x+vect_y*vect_y);
+			if (lengthf > fact) lengthf = fact;
+			float sin = lengthf / fact;
+			float cos = sqrtf(1 - sin*sin);
+//			float angle = 0.5f * M_PI * lengthf / fact;
+//			float cos = cosf(angle);
+			float intensity = 255.0f * cos;
+			if (intensity > 255) intensity = 255;
+
+			texbuf[x + y*128] = intensity;
+		}
+	}
+	memset(&buf[0], 0, 128*128);
+	u8 *bufptr = (u8 *) buf;
+	for(y=0; y<128; y+=4) {
+		for(x=0; x<128; x+=8) {
+			int xx, yy;
+			for (yy=0; yy<4; yy++) {
+				for (xx=0; xx<8; xx++) {
+					bufptr[xx + yy * 8]  = texbuf[x + xx + (y + yy)*128];
+				}
+			}
+			bufptr += 32; 
+		}
+	}
+
+	bufptr = (u8 *) buf;
+
+	GX_InitTexObj(texLightDir, (void *) &bufptr[0], 128, 128, GX_TF_I8, GX_MIRROR, GX_MIRROR, GX_TRUE);
+	GX_InitTexObjLOD(texLightDir,GX_LINEAR,GX_LINEAR, 1, 10, 0.0f, GX_TC_GE, GX_TRUE, GX_ANISO_1);
+	DCFlushRange((void *) bufptr, 128*128);
+} 
+
+
+void GL_CreateDotResultTex(GXTexObj *tex) {
+	int res = 32;
+	u8 texbuf[res*res];
+	s16 x, y;
+	u8 *buf = (u8 *) memalign(32, res*res);
+	memset(&texbuf[0], 0x00, res*res);
+	for (y=0; y<res; y++) {
+		for (x=0; x<res; x++) {
+			float diffuse = ((float) x)/((float) res);
+			float specular = pow(((float) y)/((float) res), 16);
+			float intensity = 255 * (diffuse + specular);
+			if (intensity > 255) intensity = 255;
+
+			texbuf[x + y*res] = intensity;
+		}
+	}
+	memset(&buf[0], 0, res*res);
+	u8 *bufptr = (u8 *) buf;
+	for(y=0; y<res; y+=4) {
+		for(x=0; x<res; x+=8) {
+			int xx, yy;
+			for (yy=0; yy<4; yy++) {
+				for (xx=0; xx<8; xx++) {
+					bufptr[xx + yy * 8]  = texbuf[x + xx + (y + yy)*res];
+				}
+			}
+			bufptr += 32; 
+		}
+	}
+
+	bufptr = (u8 *) buf;
+
+	GX_InitTexObj(tex, (void *) &bufptr[0], res, res, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_TRUE);
+//	GX_InitTexObj(tex, (void *) &bufptr[0], res, res, GX_TF_I8, GX_MIRROR, GX_MIRROR, GX_TRUE);
+//	GX_InitTexObjLOD(tex,GX_LINEAR,GX_LINEAR, 1, 10, 0.0f, GX_TC_GE, GX_TRUE, GX_ANISO_1);
+	DCFlushRange((void *) bufptr, 128*128);
+} 
+
+
+// all vectors need to be in modelspace, out requires numvertices*2 entries out[0] = lightvector, out[1] = halfvector
+void CalcVertexAttributes(Vector *pos, Vector *lpos, typeof (float[5]) *in, int numvertices, Vector *out) {
+	int i;
+	for(i=0; i<numvertices; i++) {
+		Vector lv, pv, half;
+		Vector *v = (Vector *) in[i];
+		// light vector
+		guVecSub(lpos, v, &lv);
+		guVecNormalize(&lv);
+		// pos vector
+		guVecSub(pos, v, &pv);
+		guVecNormalize(&pv);
+		// half vector
+		guVecAdd(&lv, &pv, &half);
+		guVecScale(&half, &half, 0.5f);
+		// store out
+		out[i*2] = lv; 
+		out[i*2+1] = half; 
+	}
+}
+
+void CalcVertexAttributes2(Vector *pos, Vector *lpos, typeof (float[5]) *in, int numvertices, Mtx nbt, Vector *out) {
+	int i;
+	for(i=0; i<numvertices; i++) {
+		Vector lv, pv, half;
+		Vector *v = (Vector *) in[i];
+		// light vector
+//		Vector t = {-4.0f, 0.0f, 4.0f};
+//		guVecSub(&t, v, &lv);
+		guVecSub(lpos, v, &lv);
+printf("lv %5.3f %5.3f %5.3f \r\n", lv.x, lv.y, lv.z);		
+		guVecNormalize(&lv);
+		// pos vector
+		guVecSub(pos, v, &pv);
+printf("pv %5.3f %5.3f %5.3f \r\n", pv.x, pv.y, pv.z);		
+		guVecNormalize(&pv);
+		// half vector
+		guVecAdd(&lv, &pv, &half);
+		guVecNormalize(&half);
+		//guVecScale(&half, &half, 0.5f);
+printf("normlv %5.3f %5.3f %5.3f \r\n", lv.x, lv.y, lv.z);		
+printf("normpv %5.3f %5.3f %5.3f \r\n", pv.x, pv.y, pv.z);		
+printf("normhv %5.3f %5.3f %5.3f \r\n", half.x, half.y, half.z);		
+		// multiply to tangent space
+		guVecMultiply(nbt, &lv, &lv);
+		guVecMultiply(nbt, &half, &half);
+printf("tangent lv %5.3f %5.3f %5.3f \r\n", lv.x, lv.y, lv.z);		
+printf("tangent hv %5.3f %5.3f %5.3f \r\n", half.x, half.y, half.z);		
+printf("nbt 0 %5.3f %5.3f %5.3f \r\n", nbt[0][0], nbt[0][1], nbt[0][2]);		
+printf("nbt 1 %5.3f %5.3f %5.3f \r\n", nbt[1][0], nbt[1][1], nbt[1][2]);		
+printf("nbt 2 %5.3f %5.3f %5.3f \r\n", nbt[2][0], nbt[2][1], nbt[2][2]);		
+		// store out
+		out[i*2] = lv; 
+		out[i*2+1] = half; 
+	}
+}
+
+
+void SetupShader() {
+	int tevstage = 0;
+	GX_ClearVtxDesc();
+	GX_SetVtxDesc(GX_VA_POS, GX_DIRECT);
+	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
+	GX_SetVtxDesc(GX_VA_TEX1, GX_DIRECT);
+	GX_SetVtxDesc(GX_VA_TEX2, GX_DIRECT);
+	GX_SetVtxDesc(GX_VA_TEX3, GX_DIRECT);
+	
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0); // normal map
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX1, GX_TEX_ST, GX_F32, 0); // Lx, Hx
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX2, GX_TEX_ST, GX_F32, 0); // Ly, Hy
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX3, GX_TEX_ST, GX_F32, 0); // Lz, Hz
+
+	GX_InvVtxCache();
+
+	// LIGHT
+	GX_SetNumChans(1); // actually 0!
+
+	// VERTEX SHADER
+	//set number of textures to generate
+	GX_SetNumTexGens(4);
+
+	// setup texture coordinate generation
+	// args: texcoord slot 0-7, matrix type, source to generate texture coordinates from, matrix to use
+	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY); // normal map
+	GX_SetTexCoordGen(GX_TEXCOORD1, GX_TG_MTX2x4, GX_TG_TEX1, GX_TEXMTX0); // Lx, Hx
+	GX_SetTexCoordGen(GX_TEXCOORD2, GX_TG_MTX2x4, GX_TG_TEX2, GX_TEXMTX1); // Ly, Hy
+	GX_SetTexCoordGen(GX_TEXCOORD3, GX_TG_MTX2x4, GX_TG_TEX3, GX_TEXMTX2); // Lz, Hz
+
+	GX_LoadTexObj(&tex_dotresult, GX_TEXMAP0); // dot3 result map
+
+
+	// indirect texture setup
+	float indmtx[2][3] = {
+		{1.0f, 1.0f, 1.0f},
+		{1.0f, 1.0f, 1.0f}
+	};
+	GX_SetIndTexOrder(GX_INDTEXSTAGE0, GX_TEXCOORD0, GX_TEXMAP1); // 2D normal map IA8/IA4 tex format where I=x, A=y
+	GX_SetIndTexOrder(GX_INDTEXSTAGE1, GX_TEXCOORD0, GX_TEXMAP2); // 1D height map I8/I4 format where I=z
+	GX_SetIndTexCoordScale(GX_INDTEXSTAGE0, GX_ITS_1, GX_ITS_1); // normal map texture scale 1:1
+	GX_SetIndTexCoordScale(GX_INDTEXSTAGE1, GX_ITS_1, GX_ITS_1); // normal map texture scale 1:1
+	GX_SetIndTexMatrix(GX_ITM_0, indmtx, 1);
+	GX_SetNumIndStages(2);
+	
+	// calculate s = N dot L, t = N dot H in 3 indirect cycles and convert to RGB with texture lookup
+	//	1) s = Nx * Lx, t = Nx * Hx
+	GX_SetTevIndirect(
+		tevstage, // tevstage 0 is used to combine normal map and lightmap
+		GX_INDTEXSTAGE0, // ind stage 0 is used to read normal map xy values
+		GX_ITF_8, 
+		GX_ITB_ST, 
+		GX_ITM_S0, // s = Nx * Lx, t = Nx * Hx
+		GX_ITW_0, 
+		GX_ITW_0, 
+		GX_FALSE, // don't add in previous coordinates
+		GX_FALSE, 
+		GX_ITBA_OFF 
+		); 
+
+	GX_SetTevColorIn(tevstage, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO); // 
+	GX_SetTevColorOp(tevstage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+	GX_SetTevOrder(tevstage, GX_TEXCOORD1, GX_TEXMAP_DISABLE, GX_COLORNULL); // use texcoord 1 (Lx, Hx)
+	tevstage++;
+	
+	//	2) s += Ny * Ly, t += Ny * Hy
+	GX_SetTevIndirect(
+		tevstage, // tevstage 0 is used to combine normal map and lightmap
+		GX_INDTEXSTAGE0, // ind stage 0 is used to read normal map xy values
+		GX_ITF_8, 
+		GX_ITB_ST, 
+		GX_ITM_T0, // s += Ny * Ly, t += Ny * Hy
+		GX_ITW_0, 
+		GX_ITW_0, 
+		GX_TRUE, // add in previous coordinates
+		GX_FALSE, 
+		GX_ITBA_OFF 
+		); 
+
+	GX_SetTevColorIn(tevstage, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO); // 
+	GX_SetTevColorOp(tevstage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+	GX_SetTevOrder(tevstage, GX_TEXCOORD2, GX_TEXMAP_DISABLE, GX_COLORNULL); // use texcoord 2 (Ly, Hy)
+	tevstage++;
+	
+	//	3) s += Nz * Lz, t += Nz * Hz
+	GX_SetTevIndirect(
+		tevstage, // tevstage 0 is used to combine normal map and lightmap
+		GX_INDTEXSTAGE1, // ind stage 1 is used to read normal map z value
+		GX_ITF_8, 
+		GX_ITB_S, 
+		GX_ITM_S0, // s += Nz * Lz, t += Nz * Hz
+		GX_ITW_0, 
+		GX_ITW_0, 
+		GX_TRUE, // add in previous coordinates
+		GX_FALSE, 
+		GX_ITBA_OFF 
+		); 
+
+	// convert (s, t) = (N dot L, N dot H) to RGB intensity f(s,t) = clamp(s + t)
+	GX_SetTevColorIn(tevstage, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_TEXC); // 
+	GX_SetTevColorOp(tevstage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+	GX_SetTevOrder(tevstage, GX_TEXCOORD3, GX_TEXMAP0, GX_COLORNULL); // use texcoord 3 (Lz, Hz) and use the sum (s,t) to read intensity from texture
+	tevstage++;
+
+//	GX_SetTevColorIn(tevstage, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_TEXC); 
+//	GX_SetTevColorOp(tevstage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+//	GX_SetTevOrder(tevstage, GX_TEXCOORD2, GX_TEXMAP0, GX_COLORNULL); 
+//	tevstage++;
+
+
+	// setup number of tev stages
+	GX_SetNumTevStages(tevstage);
+
+}
+
+// requires model space light pos and cam pos
+void DrawQuads(typeof (float[5]) *vertices, Vector *normals, Vector *tangents, Vector *bitangents, int numverts, Vector *campos, Vector *lpos) {
+//void DrawQuads(Vector *normals, Vector *tangents, Vector *bitangents, int numverts, Vector *campos, Vector *lpos) {
+	int i, j, numcalls = numverts/4;
+	for(i=0; i<numcalls; i++) {
+		Vector *n, *b, *t;
+		// fetch the nbt data
+		n = &normals[i*4];
+		b = &bitangents[i*4];
+		t = &tangents[i*4];
+		// setup the texmatrices
+/*		Mtx tangentMtx = 
+				{{ t->x,  b->x,  n->x,  0.0f},
+				 { t->x,  b->x,  n->x,  0.0f},
+				 { 0.0f,  0.0f,  0.0f,  1.0f}};		
+		Mtx bitangentMtx = 
+				{{ t->y,  b->y,  n->y,  0.0f},
+				 { t->y,  b->y,  n->y,  0.0f},
+				 { 0.0f,  0.0f,  0.0f,  1.0f}};		
+		Mtx normalMtx = 
+				{{ t->z,  b->z,  n->z,  0.0f},
+				 { t->z,  b->z,  n->z,  0.0f},
+				 { 0.0f,  0.0f,  0.0f,  1.0f}};*/
+//		Mtx tangentMtx = 
+//				{{ t->x,  t->y,  t->z,  0.0f},
+//				 { t->x,  t->y,  t->z,  0.0f},
+//				 { 0.0f,  0.0f,  0.0f,  1.0f}};		
+//		Mtx bitangentMtx = 
+//				{{ b->x,  b->y,  b->z,  0.0f},
+//				 { b->x,  b->y,  b->z,  0.0f},
+//				 { 0.0f,  0.0f,  0.0f,  1.0f}};		
+//		Mtx normalMtx = 
+//				{{ n->x,  n->y,  n->z,  0.0f},
+//				 { n->x,  n->y,  n->z,  0.0f},
+//				 { 0.0f,  0.0f,  0.0f,  1.0f}};		
+		Mtx testMtx = 
+				{{ 1.0f,  0.0f,  0.0f,  0.0f},
+				 { 0.0f,  1.0f,  0.0f,  0.0f},
+				 { 0.0f,  0.0f,  1.0f,  0.0f}};		
+		Mtx nbtMtx = 
+//				{{ t->x,  t->y,  t->z,  0.0f},
+//				 { b->x,  b->y,  b->z,  0.0f},
+//				 { n->x,  n->y,  n->z,  0.0f}};		
+				{{ t->x,  t->y,  t->z,  0.0f},
+				 { b->x,  b->y,  b->z,  0.0f},
+				 { n->x,  n->y,  n->z,  0.0f}};		
+				 
+		// load em
+		GX_LoadTexMtxImm(testMtx, GX_TEXMTX0, GX_MTX2x4); // 2x4, no need for z divide
+		GX_LoadTexMtxImm(testMtx, GX_TEXMTX1, GX_MTX2x4);
+		GX_LoadTexMtxImm(testMtx, GX_TEXMTX2, GX_MTX2x4);
+		//GX_LoadTexMtxImm(normalMtx, GX_TEXMTX2, GX_MTX2x4); // 2x4, no need for z divide
+		//GX_LoadTexMtxImm(bitangentMtx, GX_TEXMTX1, GX_MTX2x4);
+		//GX_LoadTexMtxImm(tangentMtx, GX_TEXMTX0, GX_MTX2x4);
+			
+		// calculate the vertex attributes
+		Vector va[8];
+		CalcVertexAttributes2(campos, lpos, &vertices[i*4], 4, nbtMtx, &va[0]);
+//		CalcVertexAttributes(campos, lpos, vertices, 4, &va[0]);
+//		CalcVertexAttributes(campos, lpos, numverts, &va[0]);
+		
+		// draw the vertices
+		GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+		for(j=0; j<4; j++) {
+			float *vertdata = vertices[i*4+j];
+//			float *vertdata = cubedata[i*4+j];
+			float *texdata = &vertdata[3];
+			Vector *lv = &va[j*2]; 
+			Vector *hv = &va[j*2 + 1];
+			GX_Position3f32(vertdata[0], vertdata[1], vertdata[2]);
+			GX_TexCoord2f32(texdata[0], texdata[1]);
+//			GX_TexCoord2f32(0, hv->x); // 3x2 matrix entry
+//			GX_TexCoord2f32(0, hv->y); // 3x2 matrix entry
+//			GX_TexCoord2f32(0, hv->z); // 3x2 matrix entry
+			GX_TexCoord2f32(lv->x, hv->x); // 3x2 matrix entry
+			GX_TexCoord2f32(lv->y, hv->y); // 3x2 matrix entry
+			GX_TexCoord2f32(lv->z, hv->z); // 3x2 matrix entry
+//			GX_TexCoord2f32(lv->x, 0); // 3x2 matrix entry
+//			GX_TexCoord2f32(lv->y, 0); // 3x2 matrix entry
+//			GX_TexCoord2f32(lv->z, 0); // 3x2 matrix entry
+		}
+		GX_End();
+	}
+	
+}
+
+// transform lightposition from worldspace to cameraspace 
+Vector setlight(Mtx view,f32 theta,f32 phi,f32 dist)
+{
+	Vector lpos;
+	f32 _theta,_phi;
+
+	_theta = (f32)theta*M_PI/180.0f;
+	_phi = (f32)phi*M_PI/180.0f;
+	lpos.x = dist * cosf(_phi) * sinf(_theta);
+	lpos.y = dist * sinf(_phi);
+	lpos.z = dist * cosf(_phi) * cosf(_theta);
+
+	guVecMultiply(view,&lpos,&lpos);
+	
+	return lpos;
+}
+
+
+void CalcTangSp(Vector *vertices, float texst[], Vector *tangent, Vector *bitangent) {
+	Vector v10, v20;
+	Vector v10tex20u, v10tex20v, v20tex10u, v20tex10v;
+	float det_inv;
+	float tex20u = texst[2*2+0] - texst[0*2+0];
+	float tex20v = texst[2*2+1] - texst[0*2+1];
+	float tex10u = texst[1*2+0] - texst[0*2+0];
+	float tex10v = texst[1*2+1] - texst[0*2+1];
+	guVecSub(&vertices[2], &vertices[0], &v20); 
+	guVecSub(&vertices[1], &vertices[0], &v10);
+
+	det_inv = 1.0f/(tex10u*tex20v - tex10v*tex20u);
+	guVecScale(&v10, &v10tex20u, tex20u); 
+	guVecScale(&v20, &v20tex10u, tex10u); 
+	guVecScale(&v10, &v10tex20v, tex20v); 
+	guVecScale(&v20, &v20tex10v, tex10v); 
+	
+	tangent->x = det_inv * (v10tex20v.x - v20tex10v.x);
+	tangent->y = det_inv * (v10tex20v.y - v20tex10v.y);
+	tangent->z = det_inv * (v10tex20v.z - v20tex10v.z);
+	bitangent->x = -det_inv * (v20tex10u.x - v10tex20u.x);
+	bitangent->y = -det_inv * (v20tex10u.y - v10tex20u.y);
+	bitangent->z = -det_inv * (v20tex10u.z - v10tex20u.z);
+}
+
+
+
+
+void setup() {
+	float yscale;
+	u32 xfbHeight = 0;
+	int fb = 0;
+	void *gpfifo = NULL;
+	GXColor background = {0, 0, 0, 0xff};
+
+	VIDEO_Init();
+	WPAD_Init();
+
+	rmode = VIDEO_GetPreferredMode(NULL);
+
+	// allocate the fifo buffer
+	gpfifo = memalign(32,DEFAULT_FIFO_SIZE);
+	memset(gpfifo,0,DEFAULT_FIFO_SIZE);
+
+	// allocate 2 framebuffers for double buffering
+	frameBuffer[0] = SYS_AllocateFramebuffer(rmode);
+	frameBuffer[1] = SYS_AllocateFramebuffer(rmode);
+
+	// configure video
+	VIDEO_Configure(rmode);
+	VIDEO_SetNextFramebuffer(frameBuffer[fb]);
+	VIDEO_Flush();
+	VIDEO_WaitVSync();
+	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
+
+	fb ^= 1;
+
+	// init the flipper
+	GX_Init(gpfifo,DEFAULT_FIFO_SIZE);
+ 
+	// clears the bg to color and clears the z buffer
+	GX_SetCopyClear(background, 0x00ffffff);
+ 
+	// other gx setup
+	GX_SetViewport(0,0,rmode->fbWidth,rmode->efbHeight,0,1);
+	yscale = GX_GetYScaleFactor(rmode->efbHeight,rmode->xfbHeight);
+	xfbHeight = GX_SetDispCopyYScale(yscale);
+	GX_SetScissor(0,0,rmode->fbWidth,rmode->efbHeight);
+	GX_SetDispCopySrc(0,0,rmode->fbWidth,rmode->efbHeight);
+	GX_SetDispCopyDst(rmode->fbWidth,xfbHeight);
+	GX_SetCopyFilter(rmode->aa,rmode->sample_pattern,GX_TRUE,rmode->vfilter);
+	GX_SetFieldMode(rmode->field_rendering,((rmode->viHeight==2*rmode->xfbHeight)?GX_ENABLE:GX_DISABLE));
+ 
+	if (rmode->aa)
+        GX_SetPixelFmt(GX_PF_RGB565_Z16, GX_ZC_LINEAR);
+    else
+        GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
+
+	GX_SetCullMode(GX_CULL_BACK);
+	GX_CopyDisp(frameBuffer[fb],GX_TRUE);
+	GX_SetDispCopyGamma(GX_GM_1_0);
+
+	// setup our projection matrix
+	// this creates a perspective matrix with a view angle of 90,
+	// and aspect ratio based on the display resolution
+    f32 w = rmode->viWidth;
+    f32 h = rmode->viHeight;
+	guPerspective(perspective, 45, (f32)w/h, 0.1F, 300.0F);
+	GX_LoadProjectionMtx(perspective, GX_PERSPECTIVE);
+
+}
+
+
+int main(int argc, char **argv) {
+	u16	buttonState = 0x0000;
+	float zt = 0;
+	f32 dir;
+	u8 mode;
+	u8 vsync;
+	int i, numverts;
+	Vector	*tangents;
+	Vector	*bitangents;
+	Vector 	*normals;
+
+	u32 fb = 0;
+	f32 rquad = 0.0f;
+	u32 first_frame = 1;
+	
+
+	// setup screen and pad
+	setup();
+	
+	// create textures (including shader init)
+	GL_CreateTubeTex(&tex_NxNy, &tex_Nz);
+	GL_CreateDotResultTex(&tex_dotresult);
+	//GL_CreateLightBulbTexI8(&tex_dotresult);
+	
+	// setup our camera at the origin
+	// looking down the -z axis with y up
+	Vector 	cam = {0.0F, 0.0F, 0.0F},
+				up = {0.0F, 1.0F, 0.0F},
+				look = {0.0F, 0.0F, -1.0F};
+
+	guLookAt(view, &cam, &up, &look);
+
+	// rotation
+	Vector cubeAxis[3] = {
+		{0,1,0},
+		{0,1,0},
+		{0,1,0}};
+//		{1,1,0},
+//		{0,1,1},
+//		{1,0,1}};
+
+	// calculate nbt data
+	numverts = sizeof(cubedata)/sizeof(float[5]);
+	tangents 	= memalign(32, numverts * sizeof(Vector));
+	bitangents = memalign(32, numverts * sizeof(Vector));
+	normals 	= memalign(32, numverts * sizeof(Vector));
+	
+	for(i=0; i<numverts; i+=4) {
+		int j;
+		Vector t, b, n, pn;
+		Vector 	verts[3];
+		float		textst[6];
+		for(j=0; j<3; j++) {
+			float *fverts = cubedata[i+j];
+			float *ftextst = &fverts[3];
+			verts[j].x = fverts[0];
+			verts[j].y = fverts[1];
+			verts[j].z = fverts[2];
+			textst[j*2] = ftextst[0];
+			textst[j*2+1] = ftextst[1];
+		}
+		//CalcTangentSpace(&verts[0], &textst[0], &t, &b);
+		guVecSub(&verts[1], &verts[0], &t);
+		guVecSub(&verts[2], &verts[0], &b);
+		guVecCross(&b, &t, &pn);
+
+		//guVecNormalize(&n);
+
+		CalcTangSp(&verts[0], &textst[0], &t, &b);
+		guVecNormalize(&t);
+		guVecNormalize(&b);
+	
+
+		for(j=0; j<4; j++) {
+			Vector ortht, orthb;
+			n = pn;
+			//n.x = cubedata[i+j][0];
+			//n.y = 0;//cubedata[i+j][1];
+			//n.z = cubedata[i+j][2];
+			guVecNormalize(&n);
+
+/*			float dpt = guVecDotProduct(&n, &t);
+			float dpb = guVecDotProduct(&n, &b);
+			ortht.x = t.x - n.x * dpt;
+			ortht.y = t.y - n.y * dpt;
+			ortht.z = t.z - n.z * dpt;
+			orthb.x = b.x - n.x * dpb;
+			orthb.y = b.y - n.y * dpb;
+			orthb.z = b.z - n.z * dpb;
+*/
+			ortht = t;
+			orthb = b;
+
+			guVecNormalize(&ortht);
+			guVecNormalize(&orthb);
+	
+			normals[i+j].x = n.x; 
+			normals[i+j].y = n.y; 
+			normals[i+j].z = n.z; 
+
+			tangents[i+j].x = ortht.x; 
+			tangents[i+j].y = ortht.y; 
+			tangents[i+j].z = ortht.z; 
+			bitangents[i+j].x = orthb.x;
+			bitangents[i+j].y = orthb.y;
+			bitangents[i+j].z = orthb.z;
+		}
+	}
+	
+	// main loop
+	dir = 90.0f;
+	zt = 0.0f;
+	rquad = 0.0f;
+	mode = 0;
+	vsync = 1;
+	
+	while(1) {
+		Vector li, ci;
+
+		WPAD_ScanPads();
+		if(WPAD_ButtonsDown(0) & WPAD_BUTTON_HOME) exit(0);
+		if (WPAD_ButtonsHeld(0)&WPAD_BUTTON_LEFT) zt -= 0.25f;
+		if (WPAD_ButtonsHeld(0)&WPAD_BUTTON_RIGHT) zt += 0.25f;
+		if (WPAD_ButtonsHeld(0)&WPAD_BUTTON_UP) dir -= 0.25f;
+		if (WPAD_ButtonsHeld(0)&WPAD_BUTTON_DOWN) dir += 0.25f;
+		
+		u32 buttonsHeld = WPAD_ButtonsHeld(0);
+		u32 buttonsInv  = buttonsHeld^0xFFFFFFFF;
+		if (buttonsHeld&WPAD_BUTTON_A) buttonState |= WPAD_BUTTON_A;
+		if (buttonsHeld&WPAD_BUTTON_B) buttonState |= WPAD_BUTTON_B;
+		if (buttonsHeld&WPAD_BUTTON_PLUS) buttonState |= WPAD_BUTTON_PLUS;
+		if (buttonsHeld&WPAD_BUTTON_MINUS) buttonState |= WPAD_BUTTON_MINUS;
+
+
+		if (buttonsInv&WPAD_BUTTON_A&buttonState)     { mode^=1; buttonState &= (WPAD_BUTTON_A^0xFFFF);}
+		if (buttonsInv&WPAD_BUTTON_B&buttonState)     { mode=1; buttonState &= (WPAD_BUTTON_B^0xFFFF);}
+		if (buttonsInv&WPAD_BUTTON_PLUS&buttonState)  { mode^=1; buttonState &= (WPAD_BUTTON_PLUS^0xFFFF);}
+		if (buttonsInv&WPAD_BUTTON_MINUS&buttonState) { vsync^=1; buttonState &= (WPAD_BUTTON_MINUS^0xFFFF);}
+	
+
+		// set number of rasterized color channels
+		GX_SetNumChans(1);
+		
+		// set the light
+		Vector lpos = setlight(view,dir, zt, 90.0f);
+//		Vector lpos = setlight(view, 0, 0, -0.0f, litcolors[0],litcolors[1],litcolors[2]);
+//		dir+= 2.0f;//0.05f;
+		if (dir >= 360 ) dir = 0;
+		else if (dir <= 0) dir = 360;
+		if (zt >= 360 ) zt = 0;
+		else if (zt <= 0) zt = 360;
+		
+		// connect textures 
+		GX_LoadTexObj(&tex_NxNy, GX_TEXMAP1); // light map
+		GX_LoadTexObj(&tex_Nz, GX_TEXMAP2); // reflective light map
+			
+		// setup rotations
+		int idx = 1;
+		guMtxIdentity(model);
+		guMtxRotAxisDeg(model, &cubeAxis[idx], rquad);
+		guMtxTransApply(model, model, -2.0f + (idx * 2.0f), 0.0f,-2.0f - (idx * 2.0f));
+//		guMtxTransApply(model, model, lpos.x,lpos.y,lpos.z-10.0f);
+		guMtxConcat(view, model, modelview);
+		// load the modelview matrix into matrix memory
+
+		GX_LoadPosMtxImm(modelview, GX_PNMTX0);
+		guMtxInverse(modelview, mvi);
+		//guMtxTranspose(mvi,modelview);
+		GX_LoadNrmMtxImm(modelview, GX_PNMTX0);
+		GX_SetCurrentMtx(GX_PNMTX0);
+		
+		// setup shader
+		SetupShader();
+		
+		// xform light and position vectors to modelspace
+		guMtxInverse(model, modelinverse);
+//		guVecMultiply(modelinverse, &lpos, &li);
+		guVecMultiply(modelinverse, &cam, &ci);
+		guVecMultiply(mvi, &lpos, &li);
+//		guVecMultiply(mvi, &cam, &ci);
+		
+		
+		// draw cube
+		DrawQuads(&cubedata[0], normals, tangents, bitangents, numverts, &ci, &li); 		
+
+		GX_Flush(); // Flush
+	
+		GX_SetColorUpdate(GX_TRUE);
+		GX_SetAlphaUpdate(GX_TRUE);
+		GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
+		GX_CopyDisp(frameBuffer[fb],GX_TRUE);
+		GX_DrawDone();
+
+		VIDEO_SetNextFramebuffer(frameBuffer[fb]);
+		if(first_frame) {
+			first_frame = 0;
+			VIDEO_SetBlack(FALSE);
+		}
+		VIDEO_Flush();
+ 		if (vsync) VIDEO_WaitVSync();
+		fb ^= 1;
+
+		rquad -= 0.15f;				// Decrease The Rotation Variable For The Quad     ( NEW )
+//		break;
+	}
+//	while(1) {
+//		sleep(1000);
+//	}
+	return 0;	
+
+}
+

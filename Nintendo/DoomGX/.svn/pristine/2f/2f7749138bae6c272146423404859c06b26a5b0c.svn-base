@@ -1,0 +1,157 @@
+/*
+ * gx_vid.cpp
+ *
+ *  Created on: 26 aug. 2012
+ *      Author: Danny
+ */
+
+#include <ogcsys.h>
+#include <ogc/gx.h>
+#include <ogc/video.h>
+#include <malloc.h>
+
+#include "../../idlib/precompiled.h"
+#include "gx_vid.h"
+#include "gx_qgx.h"
+#include "../../renderer/tr_local.h" // for glimpParms_t
+
+/*
+===================
+GLimp_Init
+
+This is the platform specific OpenGL initialization function.  It
+is responsible for loading OpenGL, initializing it,
+creating a window of the appropriate size, doing
+fullscreen manipulations, etc.  Its overall responsibility is
+to make sure that a functional OpenGL subsystem is operating
+when it returns to the ref.
+
+If there is any failure, the renderer will revert back to safe
+parameters and try again.
+===================
+*/
+bool GLimp_Init( glimpParms_t a ) {
+	// DRS: We just force to the size we render in
+	a.width = 640;
+    a.height = 480;
+    a.stereo = false;
+    a.fullScreen = true;
+Sys_Printf(">>> GLimp_Init() \r\n");
+Sys_Printf(">>> -------------------------------------\r\n");
+	// init textures
+	qgxInit();
+	return true;
+}
+
+void GLimp_Shutdown() {
+	// DRS TODO: detach video thread from GX?
+}
+
+void GLimp_SetGamma(unsigned short red[256], unsigned short green[256], unsigned short blue[256]) {
+	// DRS Gamma is fixed in GX...
+}
+
+void GLimp_DeactivateContext(void) {
+	// DRS TODO: stop 3D rendering?
+
+}
+
+void GLimp_ActivateContext(void) {
+	// DRS TODO: enable 3D rendering?
+
+}
+#define DEFAULT_FIFO_SIZE	(512*1024)
+static void 		*vidframebuffer[2];
+static GXRModeObj 	*vidrmode;
+static int			vidcurrbuffer;
+
+void Vid_Init() {
+	void *gpfifo = NULL;
+	vidcurrbuffer = 0;
+
+	VIDEO_Init();
+
+	// allocate the fifo buffer
+	gpfifo = memalign(32,DEFAULT_FIFO_SIZE);
+	memset(gpfifo,0,DEFAULT_FIFO_SIZE);
+
+	// configure video
+	vidrmode = VIDEO_GetPreferredMode(NULL);
+	vidrmode->viWidth = 660;
+	vidrmode->viXOrigin -= 10;
+	//vidrmode->viHeight = 480;
+	vidrmode->efbHeight = 480;
+
+	// allocate 2 framebuffers for double buffering
+	// TODO: test if faster using MEM_K0_TO_K1
+	vidframebuffer[0] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(vidrmode));
+	vidframebuffer[1] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(vidrmode));
+
+	// Initialise the console, required for printf
+	console_init(vidframebuffer[vidcurrbuffer], 20, 20, vidrmode->fbWidth, vidrmode->xfbHeight, vidrmode->fbWidth*VI_DISPLAY_PIX_SZ);
+
+	VIDEO_Configure(vidrmode);
+
+	VIDEO_SetNextFramebuffer(vidframebuffer[vidcurrbuffer]);
+	VIDEO_SetBlack(FALSE);
+	VIDEO_Flush();
+	VIDEO_WaitVSync();
+	if(vidrmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
+
+	vidcurrbuffer ^= 1;
+
+	// init GPU
+	GX_Init(gpfifo, DEFAULT_FIFO_SIZE);
+
+	// clears the bg to color and clears the z buffer
+	GXColor background = {0, 0, 255, 0};
+	GX_SetCopyClear(background, 0x00ffffff);
+
+	// other gx setup
+	GX_SetViewport(0, 0, vidrmode->fbWidth, vidrmode->efbHeight, 0, 1);
+	float yscale = GX_GetYScaleFactor(vidrmode->efbHeight, vidrmode->xfbHeight);
+	int xfbHeight = GX_SetDispCopyYScale(yscale);
+	GX_SetScissor(0, 0, vidrmode->fbWidth, vidrmode->efbHeight);
+	GX_SetDispCopySrc(0, 0, vidrmode->fbWidth, vidrmode->efbHeight);
+	GX_SetDispCopyDst(vidrmode->fbWidth, xfbHeight);
+	GX_SetCopyFilter(vidrmode->aa, vidrmode->sample_pattern, GX_TRUE, vidrmode->vfilter);
+	GX_SetFieldMode(vidrmode->field_rendering, ((vidrmode->viHeight==2*vidrmode->xfbHeight)?GX_ENABLE:GX_DISABLE));
+
+    GX_SetPixelFmt(GX_PF_RGBA6_Z24, GX_ZC_LINEAR); // RGBA6... How is that:)
+
+	GX_SetCullMode(GX_CULL_BACK);
+	GX_CopyDisp(vidframebuffer[vidcurrbuffer], GX_TRUE);
+	GX_SetDispCopyGamma(GX_GM_1_0);
+
+	GX_SetAlphaUpdate(GX_TRUE);
+	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
+	GX_SetColorUpdate(GX_TRUE);
+
+	Vid_SwapBuffers(true);
+	VIDEO_WaitVSync();
+	Vid_SwapBuffers(true);
+	VIDEO_WaitVSync();
+
+	background.r = 0;
+	background.g = 0;
+	background.b = 0;
+	background.a = 0;
+	GX_SetCopyClear(background, 0x00ffffff);
+
+	GX_SetAlphaCompare(GX_ALWAYS, 0, GX_AOP_AND, GX_ALWAYS, 0);
+
+}
+
+void Vid_SwapBuffers(bool clear) {
+Sys_Printf(">>> void Vid_SwapBuffers(boolean clear) %d\r\n", clear);
+	GX_Flush(); // Flush
+	GX_DrawDone();
+	GX_CopyDisp(vidframebuffer[vidcurrbuffer], clear);
+
+	VIDEO_SetNextFramebuffer(vidframebuffer[vidcurrbuffer]);
+	VIDEO_Flush();
+
+	//VIDEO_WaitVSync();
+	vidcurrbuffer ^= 1;
+}
+

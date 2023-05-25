@@ -1,0 +1,17 @@
+/*
+ * gx_matrix.h
+ *
+ *  Created on: 2 sep. 2012
+ *      Author: Danny
+ */
+
+#ifndef GX_MATRIX_H_
+#define GX_MATRIX_H_
+
+#include <ogc/gx.h>
+
+void qgxMatrixMode( int mode );
+void qgxLoadProjMatrixf(const float *m, boolean perspective);
+void qgxLoadMatrixf( const float *m );
+
+#endif /* GX_MATRIX_H_ */

@@ -1,0 +1,200 @@
+/***************************************************************************
+ *                                  _   _ ____  _     
+ *  Project                     ___| | | |  _ \| |    
+ *                             / __| | | | |_) | |    
+ *                            | (__| |_| |  _ <| |___ 
+ *                             \___|\___/|_| \_\_____|
+ *
+ * Copyright (C) 1998 - 2004, Daniel Stenberg, <daniel@haxx.se>, et al.
+ *
+ * This software is licensed as described in the file COPYING, which
+ * you should have received as part of this distribution. The terms
+ * are also available at http://curl.haxx.se/docs/copyright.html.
+ * 
+ * You may opt to use, copy, modify, merge, publish, distribute and/or sell
+ * copies of the Software, and permit persons to whom the Software is
+ * furnished to do so, under the terms of the COPYING file.
+ *
+ * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
+ * KIND, either express or implied.
+ *
+ * $Id: hash.c,v 1.20 2004/01/07 09:19:35 bagder Exp $
+ ***************************************************************************/
+
+#include "setup.h"
+
+#include <string.h>
+#include <stdlib.h>
+
+#include "hash.h"
+#include "llist.h"
+
+#ifdef CURLDEBUG
+/* this must be the last include file */
+#include "memdebug.h"
+#endif
+
+
+static unsigned long
+hash_str(const char *key, size_t key_length)
+{
+    long
+ retVal;
+    memset(&retVal, 0, sizeof(long));
+    SYS_Printf("longhash_str(const char *key, size_t key_length)\r\n");
+    return retVal;
+}
+
+
+static void 
+hash_element_dtor(void *user, void *element)
+{
+    SYS_Printf("void hash_element_dtor(void *user, void *element)\r\n");
+}
+
+
+/* return 1 on error, 0 is fine */
+int
+Curl_hash_init(curl_hash *h, int slots, curl_hash_dtor dtor)
+{
+    int
+ retVal;
+    memset(&retVal, 0, sizeof(int));
+    SYS_Printf("intCurl_hash_init(curl_hash *h, int slots, curl_hash_dtor dtor)\r\n");
+    return retVal;
+}
+
+
+curl_hash *
+Curl_hash_alloc(int slots, curl_hash_dtor dtor)
+{
+    SYS_Printf("curl_hash *Curl_hash_alloc(int slots, curl_hash_dtor dtor)\r\n");
+    return NULL;
+}
+
+
+static int 
+hash_key_compare(char *key1, size_t key1_len, char *key2, size_t key2_len)
+{
+    int 
+ retVal;
+    memset(&retVal, 0, sizeof(int));
+    SYS_Printf("int hash_key_compare(char *key1, size_t key1_len, char *key2, size_t key2_len)\r\n");
+    return retVal;
+}
+
+
+static curl_hash_element *
+mk_hash_element(char *key, size_t key_len, const void *p)
+{
+    SYS_Printf("curl_hash_element *mk_hash_element(char *key, size_t key_len, const void *p)\r\n");
+    return NULL;
+}
+
+
+#define find_slot(__h, __k, __k_len) (hash_str(__k, __k_len) % (__h)->slots)
+
+#define FETCH_LIST(x,y,z) x->table[find_slot(x, y, z)]
+
+/* Return the data in the hash. If there already was a match in the hash,
+   that data is returned. */
+void *
+Curl_hash_add(curl_hash *h, char *key, size_t key_len, void *p)
+{
+    SYS_Printf("void *Curl_hash_add(curl_hash *h, char *key, size_t key_len, void *p)\r\n");
+    return NULL;
+}
+
+
+#if 0
+int 
+Curl_hash_delete(curl_hash *h, char *key, size_t key_len)
+{
+    int 
+ retVal;
+    memset(&retVal, 0, sizeof(int));
+    SYS_Printf("int Curl_hash_delete(curl_hash *h, char *key, size_t key_len)\r\n");
+    return retVal;
+}
+
+#endif
+
+void *
+Curl_hash_pick(curl_hash *h, char *key, size_t key_len)
+{
+    SYS_Printf("void *Curl_hash_pick(curl_hash *h, char *key, size_t key_len)\r\n");
+    return NULL;
+}
+
+
+#if defined(CURLDEBUG) && defined(AGGRESIVE_TEST)
+void 
+Curl_hash_apply(curl_hash *h, void *user,
+                void (*cb)(void *user, void *ptr))
+{
+  curl_llist_element  *le;
+  int                  i;
+
+  for (i = 0; i < h->slots; ++i) {
+    for (le = (h->table[i])->head;
+         le;
+         le = le->next) {
+      curl_hash_element *el = le->ptr;
+      cb(user, el->ptr);
+    }
+  }
+}
+#endif
+
+void
+Curl_hash_clean(curl_hash *h)
+{
+    SYS_Printf("voidCurl_hash_clean(curl_hash *h)\r\n");
+}
+
+
+void
+Curl_hash_clean_with_criterium(curl_hash *h, void *user,
+                               int (*comp)(void *, void *))
+{
+  curl_llist_element *le;
+  curl_llist_element *lnext;
+  curl_llist *list;
+  int i;
+
+  for (i = 0; i < h->slots; ++i) {
+    list = h->table[i];
+    le = list->head; /* get first list entry */
+    while(le) {
+      curl_hash_element *he = le->ptr;
+      lnext = le->next;
+      /* ask the callback function if we shall remove this entry or not */
+      if (comp(user, he->ptr)) {
+        Curl_llist_remove(list, le, (void *) h);
+        --h->size; /* one less entry in the hash now */
+      }
+      le = lnext;
+    }
+  }
+}
+
+#if 0
+int
+Curl_hash_count(curl_hash *h)
+{
+    int
+ retVal;
+    memset(&retVal, 0, sizeof(int));
+    SYS_Printf("intCurl_hash_count(curl_hash *h)\r\n");
+    return retVal;
+}
+
+#endif
+
+void 
+Curl_hash_destroy(curl_hash *h)
+{
+    SYS_Printf("void Curl_hash_destroy(curl_hash *h)\r\n");
+}
+
+

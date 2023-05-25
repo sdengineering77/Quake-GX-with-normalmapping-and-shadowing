@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">&#x0A;<refactoring comment="Rename resource &apos;TTimo-doom3.gpl-8047099/src&apos; to &apos;srcorig&apos;" description="Rename resource &apos;src&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="src" name="srcorig" stamp="1341406308426" updateReferences="true"/>&#x0A;<refactoring comment="Rename resource &apos;TTimo-doom3.gpl-8047099/srcorig&apos; to &apos;src&apos;" description="Rename resource &apos;srcorig&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="srcorig" name="src" stamp="1341406332750" updateReferences="true"/>
+</session>

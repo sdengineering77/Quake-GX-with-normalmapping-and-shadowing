@@ -1,0 +1,26 @@
+
+**** Build of configuration Debug for project DoomGXSchratch ****
+
+make 
+echo src src/gx 
+src src/gx
+[ -d build ] || mkdir -p build
+make -C build -f /d/Data/Nintendo/DoomGXSchratch/Makefile
+find: src: No such file or directory
+make[1]: Entering directory `/d/Data/Nintendo/DoomGXSchratch/build'
+operators2.cpp
+d:/Data/Nintendo/DoomGXSchratch/src/operators2.cpp:30:2: error: 'DataWrapper<type>::operator type*()' cannot be overloaded
+d:/Data/Nintendo/DoomGXSchratch/src/operators2.cpp:28:2: error: with 'DataWrapper<type>::operator type*()'
+d:/Data/Nintendo/DoomGXSchratch/src/operators2.cpp: In function 'int main(int, char**)':
+d:/Data/Nintendo/DoomGXSchratch/src/operators2.cpp:256:49: error: invalid cast from type 'DataWrapper<cm_polygonRef_s>' to type 'byte* {aka unsigned char*}'
+d:/Data/Nintendo/DoomGXSchratch/src/operators2.cpp:263:12: warning: passing NULL to non-pointer argument 1 of 'DataWrapper<type>& DataWrapper<type>::operator=(int) [with type = cm_polygonRef_s]' [-Wconversion-null]
+d:/Data/Nintendo/DoomGXSchratch/src/operators2.cpp:264:13: error: conversion from 'DataWrapper<cm_polygonRef_s>' to 'bool' is ambiguous
+d:/Data/Nintendo/DoomGXSchratch/src/operators2.cpp:246:31: note: candidates are:
+make[1]: Leaving directory `/d/Data/Nintendo/DoomGXSchratch/build'
+d:/Data/Nintendo/DoomGXSchratch/src/operators2.cpp:97:1: note: DataWrapper<type>::operator type*() [with type = cm_polygonRef_s]
+d:/Data/Nintendo/DoomGXSchratch/src/operators2.cpp:85:1: note: DataWrapper<type>::operator const type*() [with type = cm_polygonRef_s]
+d:/Data/Nintendo/DoomGXSchratch/src/operators2.cpp:265:33: error: cannot pass objects of non-trivially-copyable type 'class DataWrapper<cm_polygonRef_s>' through '...'
+d:/Data/Nintendo/DoomGXSchratch/src/operators2.cpp:265:33: warning: format '%d' expects argument of type 'int', but argument 2 has type 'DataWrapper<cm_polygonRef_s>' [-Wformat]
+d:/Data/Nintendo/DoomGXSchratch/src/operators2.cpp:265:33: warning: format '%d' expects argument of type 'int', but argument 2 has type 'DataWrapper<cm_polygonRef_s>' [-Wformat]
+make[1]: *** [operators2.o] Error 1
+make: *** [build] Error 2

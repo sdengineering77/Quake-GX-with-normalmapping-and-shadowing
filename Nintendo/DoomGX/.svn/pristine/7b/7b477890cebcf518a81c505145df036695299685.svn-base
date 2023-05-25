@@ -1,0 +1,137 @@
+/*
+ * draw_gx.cpp
+ *
+ *  Created on: 4 sep. 2012
+ *      Author: Danny
+ */
+#include "../idlib/precompiled.h"
+
+#include "../sys/ogc/gx_qgx.h"
+#include "tr_local.h"
+
+/*
+==================
+RB_GX_DrawInteraction
+==================
+*/
+void	RB_GX_DrawInteraction( const drawInteraction_t *din ) {
+	// texture 4 is the per-surface diffuse map
+	GL_SelectTexture(0);
+	din->diffuseImage->Bind();
+
+	// draw it
+	RB_DrawElementsWithCounters( din->surf->geo );
+}
+
+
+void RB_GX_CreateDrawInteractions( const drawSurf_t *surf ) {
+Sys_Printf(">>> RB_GX_CreateDrawInteractions TODO: select shader\r\n");
+	if ( !surf ) {
+Sys_Printf(">>> RB_GX_CreateDrawInteractions !surf return\r\n");
+		return;
+	}
+
+	// perform setup here that will be constant for all interactions
+	//GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
+
+	// DRS TODO: select correct shader
+
+	// DRS TODO: bind light, stencil and ?falloff? texture
+	// distinquish between ambient and normal mapped lights
+	//if ( backEnd.vLight->lightShader->IsAmbientLight() ) {
+	//	globalImages->ambientNormalMap->Bind();
+	//} else {
+	//	globalImages->normalCubeMapImage->Bind();
+	//}
+
+	for ( ; surf ; surf=surf->nextOnLight ) {
+		// perform setup here that will not change over multiple interaction passes
+
+		// set the vertex pointers
+		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->geo->ambientCache );
+		//qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), ac->color );
+		//qglVertexAttribPointerARB( 11, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+		//qglVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
+		//qglVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
+		//qglVertexAttribPointerARB( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
+		//qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+		qgxSetVertexPointer(GX_VA_POS, ac->xyz.ToFloatPtr(), sizeof( idDrawVert ));
+		qgxSetVertexPointer(GX_VA_TEX0, ac->st.ToFloatPtr(), sizeof( idDrawVert ));
+
+
+		// this may cause RB_ARB2_DrawInteraction to be exacuted multiple
+		// times with different colors and images if the surface or light have multiple layers
+		RB_CreateSingleDrawInteractions( surf, RB_GX_DrawInteraction );
+	}
+
+	//qglDisableClientState( GL_COLOR_ARRAY );
+
+	// disable features
+	GL_SelectTexture( 0 );
+}
+
+
+void RB_GX_DrawInteractions( void ) {
+	viewLight_t		*vLight;
+	const idMaterial	*lightShader;
+Sys_Printf(">>> RB_GX_DrawInteractions\r\n");
+	GL_SelectTexture( 0 );
+
+	//
+	// for each light, perform adding and shadowing
+	//
+	for ( vLight = backEnd.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
+		backEnd.vLight = vLight;
+
+		// do fogging later
+		if ( vLight->lightShader->IsFogLight() ) {
+			continue;
+		}
+		if ( vLight->lightShader->IsBlendLight() ) {
+			continue;
+		}
+
+		if ( !vLight->localInteractions && !vLight->globalInteractions
+			&& !vLight->translucentInteractions ) {
+			continue;
+		}
+
+		lightShader = vLight->lightShader;
+
+		// clear the stencil buffer if needed
+		//		if ( vLight->globalShadows || vLight->localShadows ) {
+		//			backEnd.currentScissor = vLight->scissorRect;
+		//			if ( r_useScissor.GetBool() ) {
+		//				qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+		//					backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+		//					backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+		//					backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
+		//			}
+		//			qglClear( GL_STENCIL_BUFFER_BIT );
+		//		} else {
+		//			// no shadows, so no need to read or write the stencil buffer
+		//			// we might in theory want to use GL_ALWAYS instead of disabling
+		//			// completely, to satisfy the invarience rules
+		//			qglStencilFunc( GL_ALWAYS, 128, 255 );
+		//		}
+
+		//RB_StencilShadowPass( vLight->globalShadows );
+		RB_GX_CreateDrawInteractions( vLight->localInteractions );
+		//RB_StencilShadowPass( vLight->localShadows );
+		RB_GX_CreateDrawInteractions( vLight->globalInteractions );
+
+		// translucent surfaces never get stencil shadowed
+		if ( r_skipTranslucent.GetBool() ) {
+			continue;
+		}
+
+		//qglStencilFunc( GL_ALWAYS, 128, 255 );
+
+		backEnd.depthFunc = GLS_DEPTHFUNC_LESS;
+		RB_GX_CreateDrawInteractions( vLight->translucentInteractions );
+
+		backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
+	}
+
+	GL_SelectTexture( 0 );
+}

@@ -1,0 +1,125 @@
+################################################################################
+# Automatically-generated file. Do not edit!
+################################################################################
+
+# Add inputs and outputs from these tool invocations to the build variables 
+O_SRCS += \
+../build/cd_null.o \
+../build/chase.o \
+../build/cl_demo.o \
+../build/cl_input.o \
+../build/cl_main.o \
+../build/cl_parse.o \
+../build/cl_tent.o \
+../build/cmd.o \
+../build/common.o \
+../build/console.o \
+../build/crc.o \
+../build/cvar.o \
+../build/dict.o \
+../build/doreset.o \
+../build/error.o \
+../build/geom.o \
+../build/gl.o \
+../build/gl_aliasinstant.o \
+../build/gl_brushinstant.o \
+../build/gl_bumpgxext.o \
+../build/gl_bumpmap.o \
+../build/gl_calllist.o \
+../build/gl_common.o \
+../build/gl_decals.o \
+../build/gl_draw.o \
+../build/gl_extensions.o \
+../build/gl_matrix.o \
+../build/gl_md3.o \
+../build/gl_mesh.o \
+../build/gl_model.o \
+../build/gl_outcopy.o \
+../build/gl_qgxext.o \
+../build/gl_refrag.o \
+../build/gl_render.o \
+../build/gl_rlight.o \
+../build/gl_rmain.o \
+../build/gl_rmaingxext.o \
+../build/gl_rmisc.o \
+../build/gl_rsurf.o \
+../build/gl_rsurfgxext.o \
+../build/gl_screen.o \
+../build/gl_screenrect.o \
+../build/gl_shadow.o \
+../build/gl_stacks.o \
+../build/gl_svbsp.o \
+../build/gl_texture_slot.o \
+../build/gl_textures.o \
+../build/gl_transfer.o \
+../build/gl_vidogc.o \
+../build/gl_warp.o \
+../build/glue.o \
+../build/glut.o \
+../build/glut_8x13.o \
+../build/glut_9x15.o \
+../build/glut_bitmap.o \
+../build/glut_bwidth.o \
+../build/glut_ext.o \
+../build/glut_get.o \
+../build/glut_hel10.o \
+../build/glut_hel12.o \
+../build/glut_hel18.o \
+../build/glut_mroman.o \
+../build/glut_roman.o \
+../build/glut_shapes.o \
+../build/glut_stroke.o \
+../build/glut_swidth.o \
+../build/glut_teapot.o \
+../build/glut_tr10.o \
+../build/glut_tr24.o \
+../build/glut_util.o \
+../build/host.o \
+../build/host_cmd.o \
+../build/in_null.o \
+../build/keys.o \
+../build/lex.yy.o \
+../build/mat_stack.o \
+../build/mathlib.o \
+../build/memalloc.o \
+../build/mesh.o \
+../build/mipmap.o \
+../build/mockups.o \
+../build/net_loop.o \
+../build/net_main.o \
+../build/net_none.o \
+../build/net_vcr.o \
+../build/normal.o \
+../build/pr_cmds.o \
+../build/pr_edict.o \
+../build/pr_exec.o \
+../build/priorityq-heap.o \
+../build/priorityq.o \
+../build/project.o \
+../build/quad.o \
+../build/r_part.o \
+../build/registry.o \
+../build/render.o \
+../build/sbar.o \
+../build/snd_null.o \
+../build/sv_main.o \
+../build/sv_move.o \
+../build/sv_phys.o \
+../build/sv_user.o \
+../build/sweep.o \
+../build/sys_dosa.o \
+../build/sys_null.o \
+../build/sys_ogc.o \
+../build/sys_wina.o \
+../build/te_scripts.o \
+../build/tess.o \
+../build/tessmono.o \
+../build/view.o \
+../build/wad.o \
+../build/world.o \
+../build/worlda.o \
+../build/zone.o 
+
+
+# Each subdirectory must supply rules for building sources it contributes
+

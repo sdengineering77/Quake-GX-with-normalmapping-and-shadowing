@@ -1,0 +1,113 @@
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/207/trunk/quake-wii/src/wii/gx
+END
+gx_model.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/204/trunk/quake-wii/src/wii/gx/gx_model.c
+END
+gx_rsurf.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/202/trunk/quake-wii/src/wii/gx/gx_rsurf.c
+END
+gx_model.h
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/192/trunk/quake-wii/src/wii/gx/gx_model.h
+END
+video_gx.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/204/trunk/quake-wii/src/wii/gx/video_gx.c
+END
+gx_refrag.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/89/trunk/quake-wii/src/wii/gx/gx_refrag.c
+END
+gx_rmain.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/207/trunk/quake-wii/src/wii/gx/gx_rmain.c
+END
+gx_warp.c
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/202/trunk/quake-wii/src/wii/gx/gx_warp.c
+END
+anorm_dots.h
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/89/trunk/quake-wii/src/wii/gx/anorm_dots.h
+END
+gxquake.h
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/207/trunk/quake-wii/src/wii/gx/gxquake.h
+END
+gx_rmisc.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/207/trunk/quake-wii/src/wii/gx/gx_rmisc.c
+END
+gx_screen.c
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/202/trunk/quake-wii/src/wii/gx/gx_screen.c
+END
+gx_textures.c
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/207/trunk/quake-wii/src/wii/gx/gx_textures.c
+END
+gx_warp_sin.h
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/89/trunk/quake-wii/src/wii/gx/gx_warp_sin.h
+END
+gx_rpart.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/204/trunk/quake-wii/src/wii/gx/gx_rpart.c
+END
+gx_rlight.c
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/202/trunk/quake-wii/src/wii/gx/gx_rlight.c
+END
+gx_mesh.c
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/204/trunk/quake-wii/src/wii/gx/gx_mesh.c
+END
+gx_osk.c
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/204/trunk/quake-wii/src/wii/gx/gx_osk.c
+END
+gx_draw.c
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/207/trunk/quake-wii/src/wii/gx/gx_draw.c
+END

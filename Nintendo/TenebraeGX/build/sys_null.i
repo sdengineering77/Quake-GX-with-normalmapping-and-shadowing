@@ -1,0 +1,5 @@
+# 1 "d:/Data/Nintendo/TenebraeGX/src/sys_null.c"
+# 1 "d:\\Data\\Nintendo\\TenebraeGX\\build//"
+# 1 "<built-in>"
+# 1 "<command-line>"
+# 1 "d:/Data/Nintendo/TenebraeGX/src/sys_null.c"

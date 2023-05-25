@@ -1,0 +1,443 @@
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/203/trunk/quake-wii/src/generic
+END
+host_cmd.c
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/host_cmd.c
+END
+console.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/console.c
+END
+cl_demo.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/cl_demo.c
+END
+pr_comp.h
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/pr_comp.h
+END
+console.h
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/console.h
+END
+crc.c
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/crc.c
+END
+keys.c
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/keys.c
+END
+crc.h
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/crc.h
+END
+cl_input.c
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/cl_input.c
+END
+progdefs.h
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/progdefs.h
+END
+keys.h
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/keys.h
+END
+world.c
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/world.c
+END
+cl_parse.c
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/cl_parse.c
+END
+pr_edict.c
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/pr_edict.c
+END
+net_main.c
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/net_main.c
+END
+world.h
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/world.h
+END
+progs.h
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/progs.h
+END
+net_dgrm.c
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/net_dgrm.c
+END
+net_vcr.c
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/net_vcr.c
+END
+draw.h
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/draw.h
+END
+menu.c
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/menu.c
+END
+net_dgrm.h
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/net_dgrm.h
+END
+net_vcr.h
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/net_vcr.h
+END
+menu.h
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/192/trunk/quake-wii/src/generic/menu.h
+END
+host.c
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/host.c
+END
+cdaudio.h
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/cdaudio.h
+END
+cd_null.c
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/cd_null.c
+END
+sbar.c
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/sbar.c
+END
+cl_tent.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/cl_tent.c
+END
+cvar.c
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/cvar.c
+END
+sv_main.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/sv_main.c
+END
+sbar.h
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/sbar.h
+END
+spritegn.h
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/spritegn.h
+END
+cvar.h
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/cvar.h
+END
+snd_mix.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/snd_mix.c
+END
+anorms.h
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/anorms.h
+END
+zone.c
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/zone.c
+END
+net_loop.c
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/net_loop.c
+END
+zone.h
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/zone.h
+END
+client.h
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/client.h
+END
+sys.h
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/sys.h
+END
+net_loop.h
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/net_loop.h
+END
+screen.h
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/screen.h
+END
+sv_user.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/sv_user.c
+END
+pr_cmds.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/pr_cmds.c
+END
+bspfile.h
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/bspfile.h
+END
+quakedef.h
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/quakedef.h
+END
+sound.h
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/sound.h
+END
+modelgen.h
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/modelgen.h
+END
+cl_main.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/cl_main.c
+END
+cmd.c
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/cmd.c
+END
+input.h
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/input.h
+END
+snd_dma.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/snd_dma.c
+END
+protocol.h
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/protocol.h
+END
+cmd.h
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/cmd.h
+END
+progdefs.q1
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/progdefs.q1
+END
+view.c
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/view.c
+END
+wad.c
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/wad.c
+END
+server.h
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/server.h
+END
+sv_move.c
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/sv_move.c
+END
+view.h
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/74/trunk/quake-wii/src/generic/view.h
+END
+wad.h
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/wad.h
+END
+mathlib.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/mathlib.c
+END
+snd_mem.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/snd_mem.c
+END
+chase.c
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/chase.c
+END
+render.h
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/74/trunk/quake-wii/src/generic/render.h
+END
+mathlib.h
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/mathlib.h
+END
+pr_exec.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/pr_exec.c
+END
+vid.h
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/58/trunk/quake-wii/src/generic/vid.h
+END
+common.c
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/common.c
+END
+sv_phys.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/sv_phys.c
+END
+net.h
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/192/trunk/quake-wii/src/generic/net.h
+END
+common.h
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/203/trunk/quake-wii/src/generic/common.h
+END

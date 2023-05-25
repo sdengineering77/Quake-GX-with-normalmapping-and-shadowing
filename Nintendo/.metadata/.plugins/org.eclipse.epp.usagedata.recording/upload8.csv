@@ -1,0 +1,251 @@
+what,kind,bundleId,bundleVersion,description,time
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/curl/tests/libtest/lib510.c' does not exist.",1341406333290
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/curl/tests/server/getpart.c' does not exist.",1341406333292
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/curl/tests/server/sws.c' does not exist.",1341406333294
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jcapimin.c' does not exist.",1341406333296
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jcapistd.c' does not exist.",1341406333298
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jccoefct.c' does not exist.",1341406333300
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jccolor.c' does not exist.",1341406333302
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jcdctmgr.c' does not exist.",1341406333305
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jchuff.c' does not exist.",1341406333308
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jcinit.c' does not exist.",1341406333310
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jcmainct.c' does not exist.",1341406333312
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jcmarker.c' does not exist.",1341406333315
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jcmaster.c' does not exist.",1341406333317
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jcomapi.c' does not exist.",1341406333319
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jcparam.c' does not exist.",1341406333321
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jcphuff.c' does not exist.",1341406333323
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jcprepct.c' does not exist.",1341406333327
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jcsample.c' does not exist.",1341406333329
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jctrans.c' does not exist.",1341406333332
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jdapimin.c' does not exist.",1341406333353
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jdapistd.c' does not exist.",1341406333355
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jdatadst.c' does not exist.",1341406333357
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jdatasrc.c' does not exist.",1341406333359
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jdcoefct.c' does not exist.",1341406333361
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jdcolor.c' does not exist.",1341406333364
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jddctmgr.c' does not exist.",1341406333367
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jdhuff.c' does not exist.",1341406333369
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jdinput.c' does not exist.",1341406333372
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jdmainct.c' does not exist.",1341406333374
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jdmarker.c' does not exist.",1341406333376
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jdmaster.c' does not exist.",1341406333379
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jdmerge.c' does not exist.",1341406333381
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jdphuff.c' does not exist.",1341406333397
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jdpostct.c' does not exist.",1341406333400
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jdsample.c' does not exist.",1341406333402
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jdtrans.c' does not exist.",1341406333404
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jerror.c' does not exist.",1341406333406
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jfdctflt.c' does not exist.",1341406333408
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jfdctfst.c' does not exist.",1341406333414
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jfdctint.c' does not exist.",1341406333416
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jidctflt.c' does not exist.",1341406333418
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jidctfst.c' does not exist.",1341406333420
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jidctint.c' does not exist.",1341406333422
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jidctred.c' does not exist.",1341406333424
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jload.c' does not exist.",1341406333426
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jmemansi.c' does not exist.",1341406333428
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jmemdos.c' does not exist.",1341406333430
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jmemmgr.c' does not exist.",1341406333433
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jmemname.c' does not exist.",1341406333435
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jmemnobs.c' does not exist.",1341406333437
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jpegtran.c' does not exist.",1341406333440
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jquant1.c' does not exist.",1341406333442
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jquant2.c' does not exist.",1341406333444
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/renderer/jpeg-6/jutils.c' does not exist.",1341406333447
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/oggsrc/bitwise.c' does not exist.",1341406333449
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/oggsrc/framing.c' does not exist.",1341406333452
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/analysis.c' does not exist.",1341406333454
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/barkmel.c' does not exist.",1341406333456
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/bitrate.c' does not exist.",1341406333458
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/block.c' does not exist.",1341406333460
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/codebook.c' does not exist.",1341406333462
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/envelope.c' does not exist.",1341406333464
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/floor0.c' does not exist.",1341406333466
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/floor1.c' does not exist.",1341406333468
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/info.c' does not exist.",1341406333470
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/lookup.c' does not exist.",1341406333473
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/lpc.c' does not exist.",1341406333475
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/lsp.c' does not exist.",1341406333478
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/mapping0.c' does not exist.",1341406333480
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/mdct.c' does not exist.",1341406333482
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/psy.c' does not exist.",1341406333484
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/psytune.c' does not exist.",1341406333486
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/registry.c' does not exist.",1341406333488
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/res0.c' does not exist.",1341406333490
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/sharedbook.c' does not exist.",1341406333492
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/smallft.c' does not exist.",1341406333513
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/synthesis.c' does not exist.",1341406333513
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/tone.c' does not exist.",1341406333513
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/vorbisenc.c' does not exist.",1341406333513
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/vorbisfile.c' does not exist.",1341406333513
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sound/OggVorbis/vorbissrc/windowvb.c' does not exist.",1341406333523
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sys/linux/libXNVCtrl/NVCtrl.c' does not exist.",1341406333523
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sys/linux/setup/brandelf.c' does not exist.",1341406333523
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sys/linux/test_scheduler.c' does not exist.",1341406333523
+error,log,,,"Error: Resource '/TTimo-doom3.gpl-8047099/srcorig/sys/osx/showcursor.c' does not exist.",1341406333523
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341406334633
+executed,command,org.eclipse.ltk.ui.refactoring,3.5.0.v20100526-0800,"org.eclipse.ltk.ui.refactoring.commands.renameResource",1341406334673
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.rename",1341406334673
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341406342438
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341406420496
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341406439923
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341406459127
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.copy",1341406465474
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.paste",1341406469264
+opened,editor,org.eclipse.cdt.make.ui,7.0.0.201102110609,"org.eclipse.cdt.make.editor",1341406476481
+activated,editor,org.eclipse.cdt.make.ui,7.0.0.201102110609,"org.eclipse.cdt.make.editor",1341406476552
+activated,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341406486184
+closed,editor,org.eclipse.cdt.make.ui,7.0.0.201102110609,"org.eclipse.cdt.make.editor",1341406486184
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341406487252
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341406497028
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341406526835
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.newWizard",1341406526843
+opened,editor,org.eclipse.cdt.make.ui,7.0.0.201102110609,"org.eclipse.cdt.make.editor",1341406529196
+activated,editor,org.eclipse.cdt.make.ui,7.0.0.201102110609,"org.eclipse.cdt.make.editor",1341406529256
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341406561391
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.copy",1341406566307
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341406570874
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341406572624
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.paste",1341406572634
+activated,editor,org.eclipse.cdt.make.ui,7.0.0.201102110609,"org.eclipse.cdt.make.editor",1341406575464
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341406580403
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341406585477
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341406741320
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.file.properties",1341406741340
+activated,editor,org.eclipse.cdt.make.ui,7.0.0.201102110609,"org.eclipse.cdt.make.editor",1341406756143
+executed,command,org.eclipse.ui.workbench.texteditor,3.6.1.r361_v20100714-0800,"org.eclipse.ui.edit.text.select.wordNext",1341406777621
+executed,command,org.eclipse.ui.workbench.texteditor,3.6.1.r361_v20100714-0800,"org.eclipse.ui.edit.text.select.wordNext",1341406777817
+executed,command,org.eclipse.ui.workbench.texteditor,3.6.1.r361_v20100714-0800,"org.eclipse.ui.edit.text.select.wordNext",1341406778014
+executed,command,org.eclipse.ui.workbench.texteditor,3.6.1.r361_v20100714-0800,"org.eclipse.ui.edit.text.select.wordNext",1341406778228
+executed,command,org.eclipse.ui.workbench.texteditor,3.6.1.r361_v20100714-0800,"org.eclipse.ui.edit.text.select.wordNext",1341406778451
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.delete",1341406779425
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.file.save",1341406780466
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341406805184
+activated,view,org.eclipse.ui.console,3.5.0.v20100526,"org.eclipse.ui.console.ConsoleView",1341406808290
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341406818820
+opened,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341406856717
+activated,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341406856804
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341406908512
+opened,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341406953577
+activated,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341406953656
+activated,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341406978078
+closed,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341406978078
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341406980138
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341406986432
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341406998684
+opened,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341407011319
+activated,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341407011396
+activated,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341407020807
+closed,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341407020807
+activated,editor,org.eclipse.cdt.make.ui,7.0.0.201102110609,"org.eclipse.cdt.make.editor",1341407022682
+closed,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341407022682
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341407024278
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.copy",1341407028570
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.paste",1341407034536
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341407040785
+started,bundle,org.eclipse.ant.ui,3.5.0.v20100427,"org.eclipse.ant.ui",1341407048062
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341407048159
+executed,command,org.eclipse.ltk.ui.refactoring,3.5.0.v20100526-0800,"org.eclipse.ltk.ui.refactoring.commands.renameResource",1341407048167
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.rename",1341407048167
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341407054297
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341407058541
+executed,command,org.eclipse.ltk.ui.refactoring,3.5.0.v20100526-0800,"org.eclipse.ltk.ui.refactoring.commands.renameResource",1341407058547
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.rename",1341407058547
+opened,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341407060648
+activated,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341407060737
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341407079693
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341407089357
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.paste",1341408573012
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408592325
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408592328
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408592330
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408592333
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408603131
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.paste",1341408655332
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408665392
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408665395
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408665397
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408665400
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408673393
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408673396
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408696595
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408696598
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341408697548
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.file.properties",1341408697608
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341408708914
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341408749063
+activated,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341408749595
+executed,command,,,"AUTOGEN:::org.eclipse.ui.texteditor.ruler.actions/org.eclipse.cdt.internal.ui.text.correction.CSelectRulerAction",1341408766143
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341408786162
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341408789588
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408854205
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408857664
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408859338
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408859341
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341408863182
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.file.properties",1341408863242
+activated,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341408873516
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341408880670
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341408882405
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408922361
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408924527
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341408924530
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341408927068
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.file.properties",1341408927138
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341408943757
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341409039303
+activated,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341409039326
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341409050204
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.copy",1341409066919
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.copy",1341409116179
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341409137626
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341409147273
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.paste",1341409150867
+activated,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341409152788
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341409233373
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341409387345
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341409390896
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341409417358
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341409453354
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341409464145
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341409468038
+error,log,,,"Unexpected error: Warning more than one options found for kind 1",1341409468040
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341409471797
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.file.properties",1341409471861
+activated,view,org.eclipse.ui.console,3.5.0.v20100526,"org.eclipse.ui.console.ConsoleView",1341409475124
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341409502307
+activated,view,org.eclipse.ui.console,3.5.0.v20100526,"org.eclipse.ui.console.ConsoleView",1341409516859
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341409543276
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.copy",1341409545435
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.paste",1341409554513
+activated,view,org.eclipse.ui.console,3.5.0.v20100526,"org.eclipse.ui.console.ConsoleView",1341409556681
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341409564848
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.copy",1341409569085
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.paste",1341409574307
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341409582709
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341409589122
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341409594704
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341409597440
+activated,view,org.eclipse.ui.console,3.5.0.v20100526,"org.eclipse.ui.console.ConsoleView",1341409598197
+activated,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341409703641
+executed,command,org.eclipse.ui.workbench.texteditor,3.6.1.r361_v20100714-0800,"org.eclipse.ui.edit.text.goto.lineStart",1341409704990
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.file.save",1341409712803
+activated,view,org.eclipse.ui.console,3.5.0.v20100526,"org.eclipse.ui.console.ConsoleView",1341409714876
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341409726863
+opened,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341409727126
+activated,editor,org.eclipse.cdt.ui,5.2.2.201102110609,"org.eclipse.cdt.ui.editor.CEditor",1341409727208
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341409742133
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.copy",1341409750494
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.paste",1341409765385
+activated,view,org.eclipse.ui.console,3.5.0.v20100526,"org.eclipse.ui.console.ConsoleView",1341409768748
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341409794795
+activated,view,org.eclipse.ui.console,3.5.0.v20100526,"org.eclipse.ui.console.ConsoleView",1341409823836
+activated,view,org.eclipse.ui.navigator.resources,3.4.202.M20101124-0800,"org.eclipse.ui.navigator.ProjectExplorer",1341409836209
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.copy",1341409841811
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.paste",1341409847203
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341409859139
+activated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341409861250
+executed,command,org.eclipse.ltk.ui.refactoring,3.5.0.v20100526-0800,"org.eclipse.ltk.ui.refactoring.commands.deleteResources",1341409861257
+executed,command,org.eclipse.ui,3.6.2.M20110203-1100,"org.eclipse.ui.edit.delete",1341409861257
+deactivated,workbench,org.eclipse.ui.workbench,3.6.2.M20110210-1200,"",1341409877405

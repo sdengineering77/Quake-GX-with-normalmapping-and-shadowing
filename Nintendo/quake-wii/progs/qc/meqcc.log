@@ -1,0 +1,15 @@
+MrElusive's QuakeC compiler v1.4, Oct 29 1999 11:59:34
+This compiler is not supported by id Software.
+meqcc -help for info.
+
+meqcc looks for a progs.src in the current directory.
+Command line options:
+-src <directory>  look for a progs.src in the specified directory
+-dec [progs.dat]  decompile progs.dat or the one in the current directory
+-undec            create progs.dat which cannot be decompiled
+-undec+           " and write out undec.txt
+-asm <function>   output Quake ASM code of the specified function
+-d <define>       add a precompiler definition
+-?                display command line options
+-h                "
+-help             "

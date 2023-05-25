@@ -1,0 +1,14 @@
+#Wed Nov 14 01:32:32 CET 2012
+scalability.reconciler=false
+useQuickDiffPrefPage=true
+org.eclipse.cdt.ui.CView_patternFilterId_RemoteSystemsConnections=true
+useAnnotationsPrefPage=true
+CustomFiltersActionGroup.org.eclipse.cdt.ui.CView.userDefinedPatterns=*.bak, *.cpp.cpp
+sourceHoverBackgroundColor=255,255,225
+org.eclipse.cdt.ui.CView_patternFilterId_RemoteSystemsTempFiles=true
+CustomFiltersActionGroup.org.eclipse.cdt.ui.CView.TAG_DUMMY_TO_TEST_EXISTENCE=storedViewPreferences
+smartPaste=false
+spelling_locale_initialized=true
+eclipse.preferences.version=1
+org.eclipse.cdt.ui.CView_patternFilterId_.*=true
+buildConsoleLines=10000

@@ -1,0 +1,527 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
+
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
+#include "../idlib/precompiled.h"
+#pragma hdrstop
+
+void SCR_DrawTextLeftAlign( float &y, const char *text, ... ) id_attribute((format(printf,2,3)));
+void SCR_DrawTextRightAlign( float &y, const char *text, ... ) id_attribute((format(printf,2,3)));
+
+#define	LINE_WIDTH				78
+#define	NUM_CON_TIMES			4
+#define	CON_TEXTSIZE			0x30000
+#define	TOTAL_LINES				(CON_TEXTSIZE / LINE_WIDTH)
+#define CONSOLE_FIRSTREPEAT		200
+#define CONSOLE_REPEAT			100
+
+#define	COMMAND_HISTORY			64
+
+// the console will query the cvar and command systems for
+// command completion information
+
+class idConsoleLocal : public idConsole {
+public:
+	virtual	void		Init( void );
+	virtual void		Shutdown( void );
+	virtual	void		LoadGraphics( void );
+	virtual	bool		ProcessEvent( const sysEvent_t *event, bool forceAccept );
+//	virtual void	ProcessEvent( void ) {};
+	virtual	bool		Active( void );
+	virtual	void		ClearNotifyLines( void );
+	virtual	void		Close( void );
+	virtual	void		Print( const char *text );
+	virtual	void		Draw( bool forceFullScreen );
+
+	void				Dump( const char *toFile );
+	void				Clear();
+
+	//============================
+
+	const idMaterial *	charSetShader;
+
+private:
+	void				KeyDownEvent( int key );
+
+	void				Linefeed();
+
+	void				PageUp();
+	void				PageDown();
+	void				Top();
+	void				Bottom();
+
+	void				DrawInput();
+	void				DrawNotify();
+	void				DrawSolidConsole( float frac );
+
+	void				Scroll();
+	void				SetDisplayFraction( float frac );
+	void				UpdateDisplayFraction( void );
+
+	//============================
+
+	bool				keyCatching;
+
+	short				text[CON_TEXTSIZE];
+	int					current;		// line where next message will be printed
+	int					x;				// offset in current line for next print
+	int					display;		// bottom of console displays this line
+	int					lastKeyEvent;	// time of last key event for scroll delay
+	int					nextKeyEvent;	// keyboard repeat rate
+
+	float				displayFrac;	// approaches finalFrac at scr_conspeed
+	float				finalFrac;		// 0.0 to 1.0 lines of console to display
+	int					fracTime;		// time of last displayFrac update
+
+	int					vislines;		// in scanlines
+
+	int					times[NUM_CON_TIMES];	// cls.realtime time the line was generated
+									// for transparent notify lines
+	idVec4				color;
+
+// DRS TODO:	idEditField			historyEditLines[COMMAND_HISTORY];
+
+	int					nextHistoryLine;// the last line in the history buffer, not masked
+	int					historyLine;	// the line being displayed from history buffer
+									// will be <= nextHistoryLine
+
+// DRS TODO:		idEditField			consoleField;
+
+	static idCVar		con_speed;
+	static idCVar		con_notifyTime;
+	static idCVar		con_noPrint;
+
+	const idMaterial *	whiteShader;
+	const idMaterial *	consoleShader;
+};
+
+static idConsoleLocal localConsole;
+idConsole	*console = &localConsole;
+
+idCVar idConsoleLocal::con_speed( "con_speed", "3", CVAR_SYSTEM, "speed at which the console moves up and down" );
+idCVar idConsoleLocal::con_notifyTime( "con_notifyTime", "3", CVAR_SYSTEM, "time messages are displayed onscreen when console is pulled up" );
+#ifdef DEBUG
+idCVar idConsoleLocal::con_noPrint( "con_noPrint", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "print on the console but not onscreen when console is pulled up" );
+#else
+idCVar idConsoleLocal::con_noPrint( "con_noPrint", "1", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "print on the console but not onscreen when console is pulled up" );
+#endif
+
+
+
+/*
+=============================================================================
+
+	Misc stats
+
+=============================================================================
+*/
+
+/*
+==================
+SCR_DrawTextLeftAlign
+==================
+*/
+void SCR_DrawTextLeftAlign( float &y, const char *text, ... ) {
+    Sys_Printf("void SCR_DrawTextLeftAlign( float &y, const char *text, ... )\r\n");
+}
+
+
+/*
+==================
+SCR_DrawTextRightAlign
+==================
+*/
+void SCR_DrawTextRightAlign( float &y, const char *text, ... ) {
+    Sys_Printf("void SCR_DrawTextRightAlign( float &y, const char *text, ... )\r\n");
+}
+
+
+
+
+
+/*
+==================
+SCR_DrawFPS
+==================
+*/
+#define	FPS_FRAMES	4
+float SCR_DrawFPS( float y ) {
+    float retVal;
+    memset(&retVal, 0, sizeof(float));
+    Sys_Printf("float SCR_DrawFPS( float y )\r\n");
+    return retVal;
+}
+
+
+/*
+==================
+SCR_DrawMemoryUsage
+==================
+*/
+float SCR_DrawMemoryUsage( float y ) {
+    float retVal;
+    memset(&retVal, 0, sizeof(float));
+    Sys_Printf("float SCR_DrawMemoryUsage( float y )\r\n");
+    return retVal;
+}
+
+
+/*
+==================
+SCR_DrawAsyncStats
+==================
+*/
+float SCR_DrawAsyncStats( float y ) {
+    float retVal;
+    memset(&retVal, 0, sizeof(float));
+    Sys_Printf("float SCR_DrawAsyncStats( float y )\r\n");
+    return retVal;
+}
+
+
+/*
+==================
+SCR_DrawSoundDecoders
+==================
+*/
+float SCR_DrawSoundDecoders( float y ) {
+    float retVal;
+    memset(&retVal, 0, sizeof(float));
+    Sys_Printf("float SCR_DrawSoundDecoders( float y )\r\n");
+    return retVal;
+}
+
+
+//=========================================================================
+
+/*
+==============
+Con_Clear_f
+==============
+*/
+static void Con_Clear_f( const idCmdArgs &args ) {
+    Sys_Printf("void Con_Clear_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+==============
+Con_Dump_f
+==============
+*/
+static void Con_Dump_f( const idCmdArgs &args ) {
+    Sys_Printf("void Con_Dump_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+==============
+idConsoleLocal::Init
+==============
+*/
+void idConsoleLocal::Init( void ) {
+    Sys_Printf("void idConsoleLocal::Init( void )\r\n");
+}
+
+
+/*
+==============
+idConsoleLocal::Shutdown
+==============
+*/
+void idConsoleLocal::Shutdown( void ) {
+    Sys_Printf("void idConsoleLocal::Shutdown( void )\r\n");
+}
+
+
+/*
+==============
+LoadGraphics
+
+Can't be combined with init, because init happens before
+the renderSystem is initialized
+==============
+*/
+void idConsoleLocal::LoadGraphics() {
+    Sys_Printf("void idConsoleLocal::LoadGraphics()\r\n");
+}
+
+
+/*
+================
+idConsoleLocal::Active
+================
+*/
+bool	idConsoleLocal::Active( void ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("boolidConsoleLocal::Active( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idConsoleLocal::ClearNotifyLines
+================
+*/
+void	idConsoleLocal::ClearNotifyLines() {
+    Sys_Printf("voididConsoleLocal::ClearNotifyLines()\r\n");
+}
+
+
+/*
+================
+idConsoleLocal::Close
+================
+*/
+void	idConsoleLocal::Close() {
+    Sys_Printf("voididConsoleLocal::Close()\r\n");
+}
+
+
+/*
+================
+idConsoleLocal::Clear
+================
+*/
+void idConsoleLocal::Clear() {
+    Sys_Printf("void idConsoleLocal::Clear()\r\n");
+}
+
+
+/*
+================
+idConsoleLocal::Dump
+
+Save the console contents out to a file
+================
+*/
+void idConsoleLocal::Dump( const char *fileName ) {
+    Sys_Printf("void idConsoleLocal::Dump( const char *fileName )\r\n");
+}
+
+
+/*
+================
+idConsoleLocal::PageUp
+================
+*/
+void idConsoleLocal::PageUp( void ) {
+    Sys_Printf("void idConsoleLocal::PageUp( void )\r\n");
+}
+
+
+/*
+================
+idConsoleLocal::PageDown
+================
+*/
+void idConsoleLocal::PageDown( void ) {
+    Sys_Printf("void idConsoleLocal::PageDown( void )\r\n");
+}
+
+
+/*
+================
+idConsoleLocal::Top
+================
+*/
+void idConsoleLocal::Top( void ) {
+    Sys_Printf("void idConsoleLocal::Top( void )\r\n");
+}
+
+
+/*
+================
+idConsoleLocal::Bottom
+================
+*/
+void idConsoleLocal::Bottom( void ) {
+    Sys_Printf("void idConsoleLocal::Bottom( void )\r\n");
+}
+
+
+
+/*
+=============================================================================
+
+CONSOLE LINE EDITING
+
+==============================================================================
+*/
+
+/*
+====================
+KeyDownEvent
+
+Handles history and console scrollback
+====================
+*/
+void idConsoleLocal::KeyDownEvent( int key ) {
+    Sys_Printf("void idConsoleLocal::KeyDownEvent( int key )\r\n");
+}
+
+
+/*
+==============
+Scroll
+deals with scrolling text because we don't have key repeat
+==============
+*/
+void idConsoleLocal::Scroll( ) {
+    Sys_Printf("void idConsoleLocal::Scroll( )\r\n");
+}
+
+
+/*
+==============
+SetDisplayFraction
+
+Causes the console to start opening the desired amount.
+==============
+*/
+void idConsoleLocal::SetDisplayFraction( float frac ) {
+    Sys_Printf("void idConsoleLocal::SetDisplayFraction( float frac )\r\n");
+}
+
+
+/*
+==============
+UpdateDisplayFraction
+
+Scrolls the console up or down based on conspeed
+==============
+*/
+void idConsoleLocal::UpdateDisplayFraction( void ) {
+    Sys_Printf("void idConsoleLocal::UpdateDisplayFraction( void )\r\n");
+}
+
+
+/*
+==============
+ProcessEvent
+==============
+*/
+bool	idConsoleLocal::ProcessEvent( const sysEvent_t *event, bool forceAccept ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("boolidConsoleLocal::ProcessEvent( const sysEvent_t *event, bool forceAccept )\r\n");
+    return retVal;
+}
+
+
+/*
+==============================================================================
+
+PRINTING
+
+==============================================================================
+*/
+
+/*
+===============
+Linefeed
+===============
+*/
+void idConsoleLocal::Linefeed() {
+    Sys_Printf("void idConsoleLocal::Linefeed()\r\n");
+}
+
+
+
+/*
+================
+Print
+
+Handles cursor positioning, line wrapping, etc
+================
+*/
+void idConsoleLocal::Print( const char *txt ) {
+    Sys_Printf("void idConsoleLocal::Print( const char *txt )\r\n");
+}
+
+
+
+/*
+==============================================================================
+
+DRAWING
+
+==============================================================================
+*/
+
+
+/*
+================
+DrawInput
+
+Draw the editline after a ] prompt
+================
+*/
+void idConsoleLocal::DrawInput() {
+    Sys_Printf("void idConsoleLocal::DrawInput()\r\n");
+}
+
+
+
+/*
+================
+DrawNotify
+
+Draws the last few lines of output transparently over the game top
+================
+*/
+void idConsoleLocal::DrawNotify() {
+    Sys_Printf("void idConsoleLocal::DrawNotify()\r\n");
+}
+
+
+/*
+================
+DrawSolidConsole
+
+Draws the console with the solid background
+================
+*/
+void idConsoleLocal::DrawSolidConsole( float frac ) {
+    Sys_Printf("void idConsoleLocal::DrawSolidConsole( float frac )\r\n");
+}
+
+
+
+/*
+==============
+Draw
+
+ForceFullScreen is used by the editor
+==============
+*/
+void	idConsoleLocal::Draw( bool forceFullScreen ) {
+    Sys_Printf("voididConsoleLocal::Draw( bool forceFullScreen )\r\n");
+}
+

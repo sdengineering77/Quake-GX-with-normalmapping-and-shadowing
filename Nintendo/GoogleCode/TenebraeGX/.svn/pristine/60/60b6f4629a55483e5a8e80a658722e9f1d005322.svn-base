@@ -1,0 +1,19 @@
+
+#ifndef GL_SHADEREXTGX
+#define GL_SHADEREXTGX
+
+#include <ogc/gx.h>
+
+void GX_InitGXExt();
+
+void GX_SetupGLRender();
+void GX_InitAmbientShader(bool hasLuma);
+void GX_InitWorldBumpShader(shadowlight_t *light, entity_t *entity);
+void GX_InitShadowShader(bool add, bool invertOp);
+
+void GX_GrabEFB(int x, int y, int width, int height, u8 fmt, u8 clear, u8 mipmap, int pixsize, void *data);
+void GX_BindGLTex(u8 gxTexmap, int texnr);
+int GX_AsGXPrimitiveType(GLenum type);
+
+#endif
+

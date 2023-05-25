@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;DoomGX/src/game/physics/Push.cpp.cpp&apos; to &apos;Push.cpp&apos;" description="Rename resource &apos;Push.cpp.cpp&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="src/game/physics/Push.cpp.cpp" name="Push.cpp" stamp="1348785641528" updateReferences="true"/>
+</session>

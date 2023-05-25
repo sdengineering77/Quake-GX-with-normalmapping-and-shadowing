@@ -1,0 +1,20 @@
+
+**** Build of configuration Debug for project DoomGX ****
+
+make 
+echo src src/cm src/framework src/framework/async src/game src/game/ai src/game/anim src/game/gamesys src/game/physics src/game/script src/idlib src/idlib/bv src/idlib/containers src/idlib/geometry src/idlib/hashing src/idlib/math src/renderer src/renderer/jpeg-6 src/sound src/sound/OggVorbis src/sound/OggVorbis/ogg src/sound/OggVorbis/oggsrc src/sound/OggVorbis/vorbis src/sound/OggVorbis/vorbissrc src/sound/OggVorbis/vorbissrc/books src/sound/OggVorbis/vorbissrc/books/coupled src/sound/OggVorbis/vorbissrc/books/floor src/sound/OggVorbis/vorbissrc/books/uncoupled src/sound/OggVorbis/vorbissrc/modes src/sys src/sys/ogc src/tools src/tools/af src/tools/comafx src/tools/common src/tools/common/PropTree src/tools/compilers src/tools/compilers/aas src/tools/compilers/dmap src/tools/compilers/renderbump src/tools/compilers/roqvq src/tools/debugger src/tools/decl src/tools/guied src/tools/Help src/tools/Help/images src/tools/materialeditor src/tools/particle src/tools/pda src/tools/radiant src/tools/script src/tools/sound src/ui 
+src src/cm src/framework src/framework/async src/game src/game/ai src/game/anim src/game/gamesys src/game/physics src/game/script src/idlib src/idlib/bv src/idlib/containers src/idlib/geometry src/idlib/hashing src/idlib/math src/renderer src/renderer/jpeg-6 src/sound src/sound/OggVorbis src/sound/OggVorbis/ogg src/sound/OggVorbis/oggsrc src/sound/OggVorbis/vorbis src/sound/OggVorbis/vorbissrc src/sound/OggVorbis/vorbissrc/books src/sound/OggVorbis/vorbissrc/books/coupled src/sound/OggVorbis/vorbissrc/books/floor src/sound/OggVorbis/vorbissrc/books/uncoupled src/sound/OggVorbis/vorbissrc/modes src/sys src/sys/ogc src/tools src/tools/af src/tools/comafx src/tools/common src/tools/common/PropTree src/tools/compilers src/tools/compilers/aas src/tools/compilers/dmap src/tools/compilers/renderbump src/tools/compilers/roqvq src/tools/debugger src/tools/decl src/tools/guied src/tools/Help src/tools/Help/images src/tools/materialeditor src/tools/particle src/tools/pda src/tools/radiant src/tools/script src/tools/sound src/ui
+[ -d build ] || mkdir -p build
+make -C build -f /d/Data/Nintendo/DoomGX/Makefile
+find: src: No such file or directory
+make[1]: Entering directory `/d/Data/Nintendo/DoomGX/build'
+CollisionModel_load.cpp
+d:/Data/Nintendo/DoomGX/src/cm/CollisionModel_load.cpp:49:0: warning: ignoring #pragma hdrstop  [-Wunknown-pragmas]
+d:/Data/Nintendo/DoomGX/src/cm/CollisionModel_load.cpp: In member function 'cm_node_t* idCollisionModelManagerLocal::R_CreateAxialBSPTree(cm_model_t*, cm_node_t*, const idBounds&)':
+d:/Data/Nintendo/DoomGX/src/cm/CollisionModel_load.cpp:1958:4: warning: 'planeDist' may be used uninitialized in this function [-Wuninitialized]
+d:/Data/Nintendo/DoomGX/src/cm/CollisionModel_load.cpp:2063:8: note: 'planeDist' was declared here
+d:/Data/Nintendo/DoomGX/src/cm/../idlib/../idlib/math/Vector.h:406:23: warning: 'planeType' may be used uninitialized in this function [-Wuninitialized]
+d:/Data/Nintendo/DoomGX/src/cm/CollisionModel_load.cpp:2062:6: note: 'planeType' was declared here
+linking ... DoomGX.elf
+output ... DoomGX.dol
+make[1]: Leaving directory `/d/Data/Nintendo/DoomGX/build'

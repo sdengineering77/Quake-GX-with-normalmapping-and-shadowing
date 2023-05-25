@@ -1,0 +1,1 @@
+<Project name="test"><MagicFolder excludeFolders="CVS;.svn" filter="*" name="source" path="source\"><File path="test.c"></File></MagicFolder><File path="Makefile"></File></Project>

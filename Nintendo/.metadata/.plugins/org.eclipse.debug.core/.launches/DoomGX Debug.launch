@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="com.github.wiiclipse.launch.config">
+<stringAttribute key="Connection.Device" value="/dev/ttyUSB0"/>
+<stringAttribute key="Connection.Hostname" value="192.168.0.104"/>
+<intAttribute key="Connection.Mode" value="0"/>
+<stringAttribute key="org.eclipse.cdt.launch.COREFILE_PATH" value=""/>
+<stringAttribute key="org.eclipse.cdt.launch.PROGRAM_NAME" value="DoomGX.dol"/>
+<stringAttribute key="org.eclipse.cdt.launch.PROJECT_ATTR" value="DoomGX"/>
+<stringAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_ID_ATTR" value="cdt.managedbuild.config.xlc.exe.debug.1486705286"/>
+<booleanAttribute key="org.eclipse.cdt.launch.use_terminal" value="true"/>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/DoomGX"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="4"/>
+</listAttribute>
+</launchConfiguration>

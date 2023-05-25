@@ -1,0 +1,291 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
+
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
+
+idCVar gui_filter_password( "gui_filter_password", "0", CVAR_GUI | CVAR_INTEGER | CVAR_ARCHIVE, "Password filter" );
+idCVar gui_filter_players( "gui_filter_players", "0", CVAR_GUI | CVAR_INTEGER | CVAR_ARCHIVE, "Players filter" );
+idCVar gui_filter_gameType( "gui_filter_gameType", "0", CVAR_GUI | CVAR_INTEGER | CVAR_ARCHIVE, "Gametype filter" );
+idCVar gui_filter_idle( "gui_filter_idle", "0", CVAR_GUI | CVAR_INTEGER | CVAR_ARCHIVE, "Idle servers filter" );
+idCVar gui_filter_game( "gui_filter_game", "0", CVAR_GUI | CVAR_INTEGER | CVAR_ARCHIVE, "Game filter" );
+
+const char* l_gameTypes[] = {
+	"Deathmatch",
+	"Tourney",
+	"Team DM",
+	"Last Man",
+	"CTF",
+	NULL
+};
+
+static idServerScan *l_serverScan = NULL;
+
+/*
+================
+idServerScan::idServerScan
+================
+*/
+idServerScan::idServerScan( ) {
+#ifdef TRACE_CONSTRUCTS
+    Sys_DebugPrintf("idServerScan::idServerScan( ) size %d\r\n", sizeof(*this));
+#endif
+
+	m_pGUI = NULL;
+	m_sort = SORT_PING;
+	m_sortAscending = true;
+	challenge = 0;
+	LocalClear();
+}
+
+/*
+================
+idServerScan::LocalClear
+================
+*/
+void idServerScan::LocalClear( ) {
+	scan_state = IDLE;
+	incoming_net = false;
+	lan_pingtime = -1;
+	net_info.Clear();
+	net_servers.Clear();
+	cur_info = 0;
+	if ( listGUI ) {
+		listGUI->Clear();
+	}
+	incoming_useTimeout = false;
+	m_sortedServers.Clear();
+}
+
+
+/*
+================
+idServerScan::Clear
+================
+*/
+void idServerScan::Clear( ) {
+    Sys_Printf("void idServerScan::Clear( )\r\n");
+}
+
+
+/*
+================
+idServerScan::Shutdown
+================
+*/
+void idServerScan::Shutdown( ) {
+    Sys_Printf("void idServerScan::Shutdown( )\r\n");
+}
+
+
+/*
+================
+idServerScan::SetupLANScan
+================
+*/
+void idServerScan::SetupLANScan( ) {
+    Sys_Printf("void idServerScan::SetupLANScan( )\r\n");
+}
+
+
+/*
+================
+idServerScan::InfoResponse
+================
+*/
+int idServerScan::InfoResponse( networkServer_t &server ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idServerScan::InfoResponse( networkServer_t &server )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idServerScan::AddServer
+================
+*/
+void idServerScan::AddServer( int id, const char *srv ) {
+    Sys_Printf("void idServerScan::AddServer( int id, const char *srv )\r\n");
+}
+
+
+/*
+================
+idServerScan::EndServers
+================
+*/
+void idServerScan::EndServers( ) {
+    Sys_Printf("void idServerScan::EndServers( )\r\n");
+}
+ 
+
+/*
+================
+idServerScan::StartServers
+================
+*/
+void idServerScan::StartServers( bool timeout ) {
+    Sys_Printf("void idServerScan::StartServers( bool timeout )\r\n");
+}
+
+
+/*
+================
+idServerScan::EmitGetInfo
+================
+*/
+void idServerScan::EmitGetInfo( netadr_t &serv ) {
+    Sys_Printf("void idServerScan::EmitGetInfo( netadr_t &serv )\r\n");
+}
+
+
+/*
+===============
+idServerScan::GetChallenge
+===============
+*/
+int idServerScan::GetChallenge( ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idServerScan::GetChallenge( )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idServerScan::NetScan
+================
+*/
+void idServerScan::NetScan( ) {
+    Sys_Printf("void idServerScan::NetScan( )\r\n");
+}
+
+
+/*
+===============
+idServerScan::ServerScanFrame
+===============
+*/
+void idServerScan::RunFrame( ) {
+    Sys_Printf("void idServerScan::RunFrame( )\r\n");
+}
+
+
+/*
+===============
+idServerScan::GetBestPing
+===============
+*/
+bool idServerScan::GetBestPing( networkServer_t &serv ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idServerScan::GetBestPing( networkServer_t &serv )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idServerScan::GUIConfig
+================
+*/
+void idServerScan::GUIConfig( idUserInterface *pGUI, const char *name ) {
+    Sys_Printf("void idServerScan::GUIConfig( idUserInterface *pGUI, const char *name )\r\n");
+}
+
+
+/*
+================
+idServerScan::GUIUpdateSelected
+================
+*/
+void idServerScan::GUIUpdateSelected( void ) {
+    Sys_Printf("void idServerScan::GUIUpdateSelected( void )\r\n");
+}
+
+
+/*
+================
+idServerScan::GUIAdd
+================
+*/
+void idServerScan::GUIAdd( int id, const networkServer_t server ) {
+    Sys_Printf("void idServerScan::GUIAdd( int id, const networkServer_t server )\r\n");
+}
+
+
+/*
+================
+idServerScan::ApplyFilter
+================
+*/
+void idServerScan::ApplyFilter( ) {
+    Sys_Printf("void idServerScan::ApplyFilter( )\r\n");
+}
+
+
+/*
+================
+idServerScan::IsFiltered
+================
+*/
+bool idServerScan::IsFiltered( const networkServer_t server ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idServerScan::IsFiltered( const networkServer_t server )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idServerScan::Cmp
+================
+*/
+
+int idServerScan::Cmp( const int *a, const int *b ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idServerScan::Cmp( const int *a, const int *b )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idServerScan::SetSorting
+================
+*/
+void idServerScan::SetSorting( serverSort_t sort ) {
+    Sys_Printf("void idServerScan::SetSorting( serverSort_t sort )\r\n");
+}
+
+

@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/207/trunk/quake-wii/src/wii
+END
+net_wii.c
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/202/trunk/quake-wii/src/wii/net_wii.c
+END
+input.c
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/204/trunk/quake-wii/src/wii/input.c
+END
+input_wiimote.h
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/202/trunk/quake-wii/src/wii/input_wiimote.h
+END
+main.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/206/trunk/quake-wii/src/wii/main.cpp
+END
+system.c
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/204/trunk/quake-wii/src/wii/system.c
+END
+net_udp_wii.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/205/trunk/quake-wii/src/wii/net_udp_wii.c
+END
+sound.c
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/204/trunk/quake-wii/src/wii/sound.c
+END
+net_udp_wii.h
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/70/trunk/quake-wii/src/wii/net_udp_wii.h
+END

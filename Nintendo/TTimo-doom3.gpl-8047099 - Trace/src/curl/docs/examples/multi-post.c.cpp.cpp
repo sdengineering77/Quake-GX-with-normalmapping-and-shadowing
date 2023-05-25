@@ -1,0 +1,27 @@
+/*****************************************************************************
+ *                                  _   _ ____  _     
+ *  Project                     ___| | | |  _ \| |    
+ *                             / __| | | | |_) | |    
+ *                            | (__| |_| |  _ <| |___ 
+ *                             \___|\___/|_| \_\_____|
+ *
+ * $Id: multi-post.c,v 1.1 2002/05/06 13:38:28 bagder Exp $
+ *
+ * This is an example application source code using the multi interface
+ * to do a multipart formpost without "blocking".
+ */
+#include <stdio.h>
+#include <string.h>
+#include <sys/time.h>
+
+#include <curl/curl.h>
+
+int main(int argc, char *argv[])
+{
+    int  retVal;
+    memset(&retVal, 0, sizeof(int));
+    SYS_Printf("int main(int argc, char *argv[])\r\n");
+    return retVal;
+}
+
+

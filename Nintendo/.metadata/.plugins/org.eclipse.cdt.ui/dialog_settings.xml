@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<item value="true" key="LexicalSortingAction.sort"/>
+	<item value="Default C++ source template" key="LastUsedSourceTemplate"/>
+	<item value="Default C++ header template" key="LastUsedHeaderTemplate"/>
+	<section name="OptionalMessageDialog.hide.">
+		<item value="0" key="askReindex.detail"/>
+	</section>
+	<section name="completion_proposal_size">
+	</section>
+	<section name="org.eclipse.cdt.internal.ui.browser.opentype.OpenTypeActionSettings">
+		<item value="true" key="show_structs"/>
+		<item value="true" key="show_lowlevel"/>
+		<item value="true" key="show_macros"/>
+		<item value="true" key="show_variables"/>
+		<item value="517" key="width"/>
+		<item value="true" key="show_functions"/>
+		<item value="true" key="show_enums"/>
+		<item value="596" key="height"/>
+		<item value="true" key="show_classes"/>
+		<item value="true" key="show_typedefs"/>
+		<item value="true" key="show_namespaces"/>
+		<item value="true" key="show_unions"/>
+		<item value="398" key="y"/>
+		<item value="1001" key="x"/>
+	</section>
+	<section name="org.eclipse.cdt.internal.ui.typehierarchy.QuickHierarchy">
+		<item value="320" key="org.eclipse.cdt.internal.ui.typehierarchy.THInformationControlDIALOG_HEIGHT"/>
+		<item value="400" key="org.eclipse.cdt.internal.ui.typehierarchy.THInformationControlDIALOG_WIDTH"/>
+		<item value="919" key="org.eclipse.cdt.internal.ui.typehierarchy.THInformationControlDIALOG_X_ORIGIN"/>
+		<item value="true" key="org.eclipse.cdt.internal.ui.typehierarchy.THInformationControlDIALOG_USE_PERSISTED_LOCATION"/>
+		<item value="433" key="org.eclipse.cdt.internal.ui.typehierarchy.THInformationControlDIALOG_Y_ORIGIN"/>
+		<item value="true" key="org.eclipse.cdt.internal.ui.typehierarchy.THInformationControlDIALOG_USE_PERSISTED_SIZE"/>
+	</section>
+	<section name="PDOMSearchPage">
+		<item value="227191" key="searchFlags"/>
+		<item value="false" key="caseSensitive"/>
+		<list key="previousPatterns">
+			<item value="R_LocalTrace"/>
+			<item value="idWinVar::Init"/>
+			<item value="idMat3::InverseSelf"/>
+			<item value="idCollisionModelManagerLocal::ContentsFromString"/>
+			<item value="intidCollisionModelManagerLocal::ContentsFromString"/>
+			<item value="idEditEntities::RemoveSelectedEntity"/>
+			<item value="idRenderModelMD5::NumJoints"/>
+			<item value="idWorldspawn::Spawn"/>
+			<item value="idPhysics_Static::SetSelf"/>
+			<item value="idRenderWorldLocal::ParseShadowModel"/>
+			<item value="R_CheckForEntityDefsUsingModel"/>
+			<item value="SetDefaultText"/>
+			<item value="idSessionLocal::Stop"/>
+			<item value="idClipModel::ClearTraceModelCache"/>
+			<item value="oididClipModel::ClearTraceModelCachevoid"/>
+			<item value="RB_ShowOverdraw"/>
+			<item value="RB_STD_FogAllLights"/>
+			<item value="RB_RenderDebugTools"/>
+			<item value="Sys_Printf"/>
+			<item value="DrawInteractions"/>
+			<item value="idWindow::idWindow"/>
+			<item value="DrawText"/>
+			<item value="cursorX"/>
+			<item value="MenuEvent"/>
+			<item value="MouseState"/>
+			<item value="GetDirectUsercmd"/>
+			<item value="GL_SelectTexture"/>
+			<item value="GLimp_Init"/>
+			<item value="GX_LoadTexMtxImm"/>
+			<item value="scroll"/>
+			<item value="RB_LoadShaderTextureMatrix"/>
+			<item value="RB_T_FillDepthBuffer"/>
+			<item value="qglColorPointer"/>
+			<item value="RB_CreateSingleDrawInteractions"/>
+			<item value="glColor4fv"/>
+			<item value="qglColor4fv"/>
+			<item value="GL_ClearStateDelta"/>
+			<item value="GL_BLEND"/>
+			<item value="isPerspective"/>
+			<item value="GL_State"/>
+			<item value="GX_SetZMode"/>
+			<item value="R_SetDrawInteraction"/>
+			<item value="RB_SetBuffer"/>
+			<item value="SetBuffer"/>
+			<item value="AddEntityRefToArea"/>
+			<item value="R_RemapShaderBySkin"/>
+			<item value="R_FreeEntityDefFadedDecals"/>
+			<item value="gettime"/>
+			<item value="idVarDef::idVarDef"/>
+			<item value="R_AddDrawSurf"/>
+			<item value="RB_LogComment"/>
+			<item value="GL_CheckErrors"/>
+			<item value="R_FrameAlloc"/>
+			<item value="RB_BindVariableStageImage"/>
+			<item value="CompleteBackgroundImageLoads"/>
+			<item value="ConvertLWOToASE"/>
+			<item value="idRenderModelStatic::InitFromFile"/>
+			<item value="PointInArea"/>
+			<item value="R_CreateLightRefs"/>
+			<item value="HandleEvent"/>
+			<item value="idRenderWorldLocal::RenderScene"/>
+			<item value="UpdateEntityDef"/>
+			<item value="idRenderWindow::BuildAnimation"/>
+			<item value="idGameEdit::ParseSpawnArgsToRenderEntity"/>
+			<item value="idRenderWorldLocal::AddLightDef"/>
+			<item value="idSessionLocal::DrawWipeModel"/>
+			<item value="RB_STD_LightScale"/>
+			<item value="RB_STD_DrawShaderPasses"/>
+			<item value="R_PolytopeSurface"/>
+			<item value="idRenderWorldLocal::UpdateLightDef"/>
+			<item value="idVertexCache::AllocFrameTemp"/>
+			<item value="ParseSpawnArgsToRenderLight"/>
+			<item value="AddModel"/>
+			<item value="BeginLevelLoad"/>
+			<item value="idRenderEntityLocal"/>
+			<item value="idRenderWorldLocal::InitFromMap"/>
+			<item value="Sys_EnterCriticalSection"/>
+			<item value="RunFrame"/>
+			<item value="RB_STD_T_RenderShaderPasses"/>
+			<item value="idSessionLocal::Frame"/>
+			<item value="net_ip"/>
+			<item value="Printf"/>
+			<item value="GetPacketBlocking"/>
+			<item value="Sys_CompareNetAdrBase"/>
+			<item value="ExecuteCommandBuffer"/>
+			<item value="Frame"/>
+			<item value="FreeData"/>
+			<item value="SingleAsyncTic"/>
+			<item value="UsercmdInterrupt"/>
+			<item value="Async"/>
+			<item value="FindType"/>
+			<item value="ReloadFile"/>
+			<item value="Purge"/>
+			<item value="Reload"/>
+			<item value="CacheDictionaryMedia"/>
+			<item value="Parse"/>
+			<item value="ListFiles"/>
+			<item value="idDeclFile::LoadAndParse"/>
+			<item value="FindTypeWithoutParsing"/>
+			<item value="idHeap::AllocatePage"/>
+			<item value="idSysLocal::ClockTicksPerSecond"/>
+			<item value="idSessionLocal::StartMenu"/>
+			<item value="idCommonLocal::AddStartupCommands"/>
+			<item value="idList"/>
+			<item value="LoadJPG"/>
+			<item value="Sys_Alloc"/>
+			<item value="Mem_Init"/>
+			<item value="FindGui"/>
+			<item value="doom_eventsscriptFindGui"/>
+			<item value="idVarDef"/>
+			<item value="MAX_CLIENTS"/>
+			<item value="idGameLocal::idGameLocal"/>
+			<item value="idDeclTable::FreeData"/>
+			<item value="AllocDef"/>
+			<item value="idProgram::idProgram"/>
+			<item value="RegisterFont"/>
+			<item value="idDeclEntityDef::FreeData"/>
+			<item value="voididDeclEntityDef::FreeData"/>
+			<item value="idTypeDef::idTypeDef"/>
+			<item value="idTarget_EndLevel::Event_Trigger"/>
+			<item value="Event_Start"/>
+			<item value="copySpawnArgs"/>
+			<item value="idSurface_Patch::SubdivideExplicit"/>
+			<item value="idRenderWorld"/>
+			<item value="idGameLocal::FindEntityDefDict"/>
+			<item value="idGameLocal::Error"/>
+			<item value="SetNormalPalette"/>
+			<item value="idImageManager::SetNormalPalette"/>
+			<item value="idImage::Bind"/>
+			<item value="glutInitDisplayMode"/>
+			<item value="idCVarSystemLocal::Restart_f"/>
+			<item value="MAX_PRINT_MSG_SIZE"/>
+			<item value="::Clear"/>
+			<item value="idEditField::idEditField"/>
+			<item value="dEditField::idEditField"/>
+			<item value="idEventLoop::idEventLoop"/>
+			<item value="dictSearch"/>
+			<item value="idMaterial"/>
+			<item value="idSession"/>
+			<item value="Mem_Alloc"/>
+			<item value="cmdSystem"/>
+			<item value="usercmdGen"/>
+			<item value="backgroundDownload_t"/>
+			<item value="idStr::ExtractFileExtension"/>
+			<item value="ExtractFileExtension"/>
+			<item value="idStr"/>
+		</list>
+	</section>
+	<section name="org.eclipse.cdt.internal.ui.typehierarchy.OpenTypeInHierarchyActionSettings">
+		<item value="true" key="show_structs"/>
+		<item value="true" key="show_lowlevel"/>
+		<item value="false" key="show_macros"/>
+		<item value="false" key="show_variables"/>
+		<item value="393" key="width"/>
+		<item value="false" key="show_functions"/>
+		<item value="true" key="show_enums"/>
+		<item value="578" key="height"/>
+		<item value="true" key="show_classes"/>
+		<item value="true" key="show_typedefs"/>
+		<item value="false" key="show_namespaces"/>
+		<item value="true" key="show_unions"/>
+		<item value="140" key="y"/>
+		<item value="861" key="x"/>
+	</section>
+	<section name="org.eclipse.cdt.ui.text.hover.CMacroExpansionExploration.internal">
+		<item value="1113" key="size.width"/>
+		<item value="545" key="size.height"/>
+	</section>
+	<section name="CRenameRefactoringInputPage">
+	</section>
+	<section name="org.eclipse.cdt.ui.text.hover.CMacroExpansionExploration">
+	</section>
+</section>

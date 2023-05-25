@@ -1,0 +1,1184 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
+
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
+#include "../idlib/precompiled.h"
+#pragma hdrstop
+
+#include "Session_local.h"
+
+idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
+idCVar	idSessionLocal::com_minTics( "com_minTics", "1", CVAR_SYSTEM, "" );
+idCVar	idSessionLocal::com_showTics( "com_showTics", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
+idCVar	idSessionLocal::com_fixedTic( "com_fixedTic", "0", CVAR_SYSTEM | CVAR_INTEGER, "", 0, 10 );
+idCVar	idSessionLocal::com_showDemo( "com_showDemo", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
+idCVar	idSessionLocal::com_skipGameDraw( "com_skipGameDraw", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
+idCVar	idSessionLocal::com_aviDemoSamples( "com_aviDemoSamples", "16", CVAR_SYSTEM, "" );
+idCVar	idSessionLocal::com_aviDemoWidth( "com_aviDemoWidth", "256", CVAR_SYSTEM, "" );
+idCVar	idSessionLocal::com_aviDemoHeight( "com_aviDemoHeight", "256", CVAR_SYSTEM, "" );
+idCVar	idSessionLocal::com_aviDemoTics( "com_aviDemoTics", "2", CVAR_SYSTEM | CVAR_INTEGER, "", 1, 60 );
+idCVar	idSessionLocal::com_wipeSeconds( "com_wipeSeconds", "1", CVAR_SYSTEM, "" );
+idCVar	idSessionLocal::com_guid( "com_guid", "", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_ROM, "" );
+
+idSessionLocal		sessLocal;
+idSession			*session = &sessLocal;
+
+// these must be kept up to date with window Levelshot in guis/mainmenu.gui
+const int PREVIEW_X = 211;
+const int PREVIEW_Y = 31;
+const int PREVIEW_WIDTH = 398;
+const int PREVIEW_HEIGHT = 298;
+
+void RandomizeStack( void ) {
+    Sys_Printf("void RandomizeStack( void )\r\n");
+}
+
+
+/*
+=================
+Session_RescanSI_f
+=================
+*/
+void Session_RescanSI_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_RescanSI_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+==================
+Session_Map_f
+
+Restart the server on a different map
+==================
+*/
+static void Session_Map_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_Map_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+==================
+Session_DevMap_f
+
+Restart the server on a different map in developer mode
+==================
+*/
+static void Session_DevMap_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_DevMap_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+==================
+Session_TestMap_f
+==================
+*/
+static void Session_TestMap_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_TestMap_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+==================
+Sess_WritePrecache_f
+==================
+*/
+static void Sess_WritePrecache_f( const idCmdArgs &args ) {
+    Sys_Printf("void Sess_WritePrecache_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::MaybeWaitOnCDKey
+===============
+*/
+bool idSessionLocal::MaybeWaitOnCDKey( void ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idSessionLocal::MaybeWaitOnCDKey( void )\r\n");
+    return retVal;
+}
+
+
+/*
+===================
+Session_PromptKey_f
+===================
+*/
+static void Session_PromptKey_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_PromptKey_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+===============================================================================
+
+SESSION LOCAL
+  
+===============================================================================
+*/
+
+/*
+===============
+idSessionLocal::Clear
+===============
+*/
+void idSessionLocal::Clear() {
+
+	insideUpdateScreen = false;
+	insideExecuteMapChange = false;
+
+	loadingSaveGame = false;
+	savegameFile = NULL;
+	savegameVersion = 0;
+
+	currentMapName.Clear();
+	aviDemoShortName.Clear();
+	msgFireBack[ 0 ].Clear();
+	msgFireBack[ 1 ].Clear();
+
+	timeHitch = 0;
+
+	rw = NULL;
+	sw = NULL;
+	menuSoundWorld = NULL;
+	readDemo = NULL;
+	writeDemo = NULL;
+	renderdemoVersion = 0;
+	cmdDemoFile = NULL;
+
+	syncNextGameFrame = false;
+	mapSpawned = false;
+	guiActive = NULL;
+	aviCaptureMode = false;
+	timeDemo = TD_NO;
+	waitingOnBind = false;
+	lastPacifierTime = 0;
+
+	msgRunning = false;
+	guiMsgRestore = NULL;
+	msgIgnoreButtons = false;
+
+	bytesNeededForMapLoad = 0;
+
+#if ID_CONSOLE_LOCK
+	emptyDrawCount = 0;
+#endif
+	ClearWipe();
+
+	loadGameList.Clear();
+	modsList.Clear();
+
+	authEmitTimeout = 0;
+	authWaitBox = false;
+
+	authMsg.Clear();
+}
+
+
+/*
+===============
+idSessionLocal::idSessionLocal
+===============
+*/
+idSessionLocal::idSessionLocal() {
+#ifdef TRACE_CONSTRUCTS
+    Sys_DebugPrintf("idSessionLocal::idSessionLocal() size %d\r\n", sizeof(*this));
+#endif
+
+	guiInGame = guiMainMenu = guiIntro \
+		= guiRestartMenu = guiLoading = guiGameOver = guiActive \
+		= guiTest = guiMsg = guiMsgRestore = guiTakeNotes = NULL;	
+	
+	menuSoundWorld = NULL;
+	
+	Clear();
+}
+
+/*
+===============
+idSessionLocal::~idSessionLocal
+===============
+*/
+idSessionLocal::~idSessionLocal() {
+}
+
+/*
+===============
+idSessionLocal::Stop
+
+called on errors and game exits
+===============
+*/
+void idSessionLocal::Stop() {
+    Sys_Printf("void idSessionLocal::Stop()\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::Shutdown
+===============
+*/
+void idSessionLocal::Shutdown() {
+    Sys_Printf("void idSessionLocal::Shutdown()\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::IsMultiplayer
+===============
+*/
+bool	idSessionLocal::IsMultiplayer() {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("boolidSessionLocal::IsMultiplayer()\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idSessionLocal::StartWipe
+
+Draws and captures the current state, then starts a wipe with that image
+================
+*/
+void idSessionLocal::StartWipe( const char *_wipeMaterial, bool hold ) {
+    Sys_Printf("void idSessionLocal::StartWipe( const char *_wipeMaterial, bool hold )\r\n");
+}
+
+
+/*
+================
+idSessionLocal::CompleteWipe
+================
+*/
+void idSessionLocal::CompleteWipe() {
+    Sys_Printf("void idSessionLocal::CompleteWipe()\r\n");
+}
+
+
+/*
+================
+idSessionLocal::ShowLoadingGui
+================
+*/
+void idSessionLocal::ShowLoadingGui() {
+    Sys_Printf("void idSessionLocal::ShowLoadingGui()\r\n");
+}
+
+
+
+
+/*
+================
+idSessionLocal::ClearWipe
+================
+*/
+void idSessionLocal::ClearWipe( void ) {
+	wipeHold = false;
+	wipeStopTic = 0;
+	wipeStartTic = wipeStopTic + 1;
+}
+
+
+/*
+================
+Session_TestGUI_f
+================
+*/
+static void Session_TestGUI_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_TestGUI_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+================
+idSessionLocal::TestGUI
+================
+*/
+void idSessionLocal::TestGUI( const char *guiName ) {
+    Sys_Printf("void idSessionLocal::TestGUI( const char *guiName )\r\n");
+}
+
+
+/*
+================
+FindUnusedFileName
+================
+*/
+static idStr FindUnusedFileName( const char *format ) {
+    idStr retVal;
+    memset(&retVal, 0, sizeof(idStr));
+    Sys_Printf("idStr FindUnusedFileName( const char *format )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+Session_DemoShot_f
+================
+*/
+static void Session_DemoShot_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_DemoShot_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+================
+Session_RecordDemo_f
+================
+*/
+static void Session_RecordDemo_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_RecordDemo_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+================
+Session_CompressDemo_f
+================
+*/
+static void Session_CompressDemo_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_CompressDemo_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+================
+Session_StopRecordingDemo_f
+================
+*/
+static void Session_StopRecordingDemo_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_StopRecordingDemo_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+================
+Session_PlayDemo_f
+================
+*/
+static void Session_PlayDemo_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_PlayDemo_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+================
+Session_TimeDemo_f
+================
+*/
+static void Session_TimeDemo_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_TimeDemo_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+================
+Session_TimeDemoQuit_f
+================
+*/
+static void Session_TimeDemoQuit_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_TimeDemoQuit_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+================
+Session_AVIDemo_f
+================
+*/
+static void Session_AVIDemo_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_AVIDemo_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+================
+Session_AVIGame_f
+================
+*/
+static void Session_AVIGame_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_AVIGame_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+================
+Session_AVICmdDemo_f
+================
+*/
+static void Session_AVICmdDemo_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_AVICmdDemo_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+================
+Session_WriteCmdDemo_f
+================
+*/
+static void Session_WriteCmdDemo_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_WriteCmdDemo_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+================
+Session_PlayCmdDemo_f
+================
+*/
+static void Session_PlayCmdDemo_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_PlayCmdDemo_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+================
+Session_TimeCmdDemo_f
+================
+*/
+static void Session_TimeCmdDemo_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_TimeCmdDemo_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+================
+Session_Disconnect_f
+================
+*/
+static void Session_Disconnect_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_Disconnect_f( const idCmdArgs &args )\r\n");
+}
+
+
+#ifdef ID_DEMO_BUILD
+/*
+================
+Session_EndOfDemo_f
+================
+*/
+static void Session_EndOfDemo_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_EndOfDemo_f( const idCmdArgs &args )\r\n");
+}
+
+#endif
+
+/*
+================
+Session_ExitCmdDemo_f
+================
+*/
+static void Session_ExitCmdDemo_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_ExitCmdDemo_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+================
+idSessionLocal::StartRecordingRenderDemo
+================
+*/
+void idSessionLocal::StartRecordingRenderDemo( const char *demoName ) {
+    Sys_Printf("void idSessionLocal::StartRecordingRenderDemo( const char *demoName )\r\n");
+}
+
+
+/*
+================
+idSessionLocal::StopRecordingRenderDemo
+================
+*/
+void idSessionLocal::StopRecordingRenderDemo() {
+    Sys_Printf("void idSessionLocal::StopRecordingRenderDemo()\r\n");
+}
+
+
+/*
+================
+idSessionLocal::StopPlayingRenderDemo
+
+Reports timeDemo numbers and finishes any avi recording
+================
+*/
+void idSessionLocal::StopPlayingRenderDemo() {
+    Sys_Printf("void idSessionLocal::StopPlayingRenderDemo()\r\n");
+}
+
+
+/*
+================
+idSessionLocal::DemoShot
+
+A demoShot is a single frame demo
+================
+*/
+void idSessionLocal::DemoShot( const char *demoName ) {
+    Sys_Printf("void idSessionLocal::DemoShot( const char *demoName )\r\n");
+}
+
+
+/*
+================
+idSessionLocal::StartPlayingRenderDemo
+================
+*/
+void idSessionLocal::StartPlayingRenderDemo( idStr demoName ) {
+    Sys_Printf("void idSessionLocal::StartPlayingRenderDemo( idStr demoName )\r\n");
+}
+
+
+/*
+================
+idSessionLocal::TimeRenderDemo
+================
+*/
+void idSessionLocal::TimeRenderDemo( const char *demoName, bool twice ) {
+    Sys_Printf("void idSessionLocal::TimeRenderDemo( const char *demoName, bool twice )\r\n");
+}
+
+
+
+/*
+================
+idSessionLocal::BeginAVICapture
+================
+*/
+void idSessionLocal::BeginAVICapture( const char *demoName ) {
+    Sys_Printf("void idSessionLocal::BeginAVICapture( const char *demoName )\r\n");
+}
+
+
+/*
+================
+idSessionLocal::EndAVICapture
+================
+*/
+void idSessionLocal::EndAVICapture() {
+    Sys_Printf("void idSessionLocal::EndAVICapture()\r\n");
+}
+
+
+
+/*
+================
+idSessionLocal::AVIRenderDemo
+================
+*/
+void idSessionLocal::AVIRenderDemo( const char *_demoName ) {
+    Sys_Printf("void idSessionLocal::AVIRenderDemo( const char *_demoName )\r\n");
+}
+
+
+/*
+================
+idSessionLocal::AVICmdDemo
+================
+*/
+void idSessionLocal::AVICmdDemo( const char *demoName ) {
+    Sys_Printf("void idSessionLocal::AVICmdDemo( const char *demoName )\r\n");
+}
+
+
+/*
+================
+idSessionLocal::AVIGame
+
+Start AVI recording the current game session
+================
+*/
+void idSessionLocal::AVIGame( const char *demoName ) {
+    Sys_Printf("void idSessionLocal::AVIGame( const char *demoName )\r\n");
+}
+
+
+/*
+================
+idSessionLocal::CompressDemoFile
+================
+*/
+void idSessionLocal::CompressDemoFile( const char *scheme, const char *demoName ) {
+    Sys_Printf("void idSessionLocal::CompressDemoFile( const char *scheme, const char *demoName )\r\n");
+}
+
+
+
+/*
+===============
+idSessionLocal::StartNewGame
+===============
+*/
+void idSessionLocal::StartNewGame( const char *mapName, bool devmap ) {
+    Sys_Printf("void idSessionLocal::StartNewGame( const char *mapName, bool devmap )\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::GetAutoSaveName
+===============
+*/
+idStr idSessionLocal::GetAutoSaveName( const char *mapName ) const {
+    idStr retVal;
+    memset(&retVal, 0, sizeof(idStr));
+    Sys_Printf("idStr idSessionLocal::GetAutoSaveName( const char *mapName )\r\n");
+    return retVal;
+}
+
+
+/*
+===============
+idSessionLocal::MoveToNewMap
+
+Leaves the existing userinfo and serverinfo
+===============
+*/
+void idSessionLocal::MoveToNewMap( const char *mapName ) {
+    Sys_Printf("void idSessionLocal::MoveToNewMap( const char *mapName )\r\n");
+}
+
+
+/*
+==============
+SaveCmdDemoFromFile
+==============
+*/
+void idSessionLocal::SaveCmdDemoToFile( idFile *file ) {
+    Sys_Printf("void idSessionLocal::SaveCmdDemoToFile( idFile *file )\r\n");
+}
+
+
+/*
+==============
+idSessionLocal::LoadCmdDemoFromFile
+==============
+*/
+void idSessionLocal::LoadCmdDemoFromFile( idFile *file ) {
+    Sys_Printf("void idSessionLocal::LoadCmdDemoFromFile( idFile *file )\r\n");
+}
+
+
+/*
+==============
+idSessionLocal::WriteCmdDemo
+
+Dumps the accumulated commands for the current level.
+This should still work after disconnecting from a level
+==============
+*/
+void idSessionLocal::WriteCmdDemo( const char *demoName, bool save ) {
+    Sys_Printf("void idSessionLocal::WriteCmdDemo( const char *demoName, bool save )\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::FinishCmdLoad
+===============
+*/
+void idSessionLocal::FinishCmdLoad() {
+    Sys_Printf("void idSessionLocal::FinishCmdLoad()\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::StartPlayingCmdDemo
+===============
+*/
+void idSessionLocal::StartPlayingCmdDemo(const char *demoName) {
+    Sys_Printf("void idSessionLocal::StartPlayingCmdDemo(const char *demoName)\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::TimeCmdDemo
+===============
+*/
+void idSessionLocal::TimeCmdDemo( const char *demoName ) {
+    Sys_Printf("void idSessionLocal::TimeCmdDemo( const char *demoName )\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::UnloadMap
+
+Performs cleanup that needs to happen between maps, or when a
+game is exited.
+Exits with mapSpawned = false
+===============
+*/
+void idSessionLocal::UnloadMap() {
+    Sys_Printf("void idSessionLocal::UnloadMap()\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::LoadLoadingGui
+===============
+*/
+void idSessionLocal::LoadLoadingGui( const char *mapName ) {
+    Sys_Printf("void idSessionLocal::LoadLoadingGui( const char *mapName )\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::GetBytesNeededForMapLoad
+===============
+*/
+int idSessionLocal::GetBytesNeededForMapLoad( const char *mapName ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idSessionLocal::GetBytesNeededForMapLoad( const char *mapName )\r\n");
+    return retVal;
+}
+
+
+/*
+===============
+idSessionLocal::SetBytesNeededForMapLoad
+===============
+*/
+void idSessionLocal::SetBytesNeededForMapLoad( const char *mapName, int bytesNeeded ) {
+    Sys_Printf("void idSessionLocal::SetBytesNeededForMapLoad( const char *mapName, int bytesNeeded )\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::ExecuteMapChange
+
+Performs the initialization of a game based on mapSpawnData, used for both single
+player and multiplayer, but not for renderDemos, which don't
+create a game at all.
+Exits with mapSpawned = true
+===============
+*/
+void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
+    Sys_Printf("void idSessionLocal::ExecuteMapChange( bool noFadeWipe )\r\n");
+}
+
+
+/*
+===============
+LoadGame_f
+===============
+*/
+void LoadGame_f( const idCmdArgs &args ) {
+    Sys_Printf("void LoadGame_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+===============
+SaveGame_f
+===============
+*/
+void SaveGame_f( const idCmdArgs &args ) {
+    Sys_Printf("void SaveGame_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+===============
+TakeViewNotes_f
+===============
+*/
+void TakeViewNotes_f( const idCmdArgs &args ) {
+    Sys_Printf("void TakeViewNotes_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+===============
+TakeViewNotes2_f
+===============
+*/
+void TakeViewNotes2_f( const idCmdArgs &args ) {
+    Sys_Printf("void TakeViewNotes2_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::TakeNotes
+===============
+*/
+void idSessionLocal::TakeNotes( const char *p, bool extended ) {
+    Sys_Printf("void idSessionLocal::TakeNotes( const char *p, bool extended )\r\n");
+}
+
+
+/*
+===============
+Session_Hitch_f
+===============
+*/
+void Session_Hitch_f( const idCmdArgs &args ) {
+    Sys_Printf("void Session_Hitch_f( const idCmdArgs &args )\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::ScrubSaveGameFileName
+
+Turns a bad file name into a good one or your money back
+===============
+*/
+void idSessionLocal::ScrubSaveGameFileName( idStr &saveFileName ) const {
+    Sys_Printf("void idSessionLocal::ScrubSaveGameFileName( idStr &saveFileName )\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::SaveGame
+===============
+*/
+bool idSessionLocal::SaveGame( const char *saveName, bool autosave ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idSessionLocal::SaveGame( const char *saveName, bool autosave )\r\n");
+    return retVal;
+}
+
+
+/*
+===============
+idSessionLocal::LoadGame
+===============
+*/
+bool idSessionLocal::LoadGame( const char *saveName ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idSessionLocal::LoadGame( const char *saveName )\r\n");
+    return retVal;
+}
+
+
+/*
+===============
+idSessionLocal::ProcessEvent
+===============
+*/
+bool idSessionLocal::ProcessEvent( const sysEvent_t *event ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idSessionLocal::ProcessEvent( const sysEvent_t *event )\r\n");
+    return retVal;
+}
+
+
+/*
+===============
+idSessionLocal::DrawWipeModel
+
+Draw the fade material over everything that has been drawn
+===============
+*/
+void	idSessionLocal::DrawWipeModel() {
+    Sys_Printf("voididSessionLocal::DrawWipeModel()\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::AdvanceRenderDemo
+===============
+*/
+void idSessionLocal::AdvanceRenderDemo( bool singleFrameOnly ) {
+    Sys_Printf("void idSessionLocal::AdvanceRenderDemo( bool singleFrameOnly )\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::DrawCmdGraph
+
+Graphs yaw angle for testing smoothness
+===============
+*/
+static const int	ANGLE_GRAPH_HEIGHT = 128;
+static const int	ANGLE_GRAPH_STRETCH = 3;
+void idSessionLocal::DrawCmdGraph() {
+    Sys_Printf("void idSessionLocal::DrawCmdGraph()\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::PacifierUpdate
+===============
+*/
+void idSessionLocal::PacifierUpdate() {
+    Sys_Printf("void idSessionLocal::PacifierUpdate()\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::Draw
+===============
+*/
+void idSessionLocal::Draw() {
+    Sys_Printf("void idSessionLocal::Draw()\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::UpdateScreen
+===============
+*/
+void idSessionLocal::UpdateScreen( bool outOfSequence ) {
+    Sys_Printf("void idSessionLocal::UpdateScreen( bool outOfSequence )\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::Frame
+===============
+*/
+void idSessionLocal::Frame() {
+    Sys_Printf("void idSessionLocal::Frame()\r\n");
+}
+
+
+/*
+================
+idSessionLocal::RunGameTic
+================
+*/
+void idSessionLocal::RunGameTic() {
+    Sys_Printf("void idSessionLocal::RunGameTic()\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::Init
+
+Called in an orderly fashion at system startup,
+so commands, cvars, files, etc are all available
+===============
+*/
+void idSessionLocal::Init() {
+    Sys_Printf("void idSessionLocal::Init()\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::GetLocalClientNum
+===============
+*/
+int idSessionLocal::GetLocalClientNum() {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idSessionLocal::GetLocalClientNum()\r\n");
+    return retVal;
+}
+
+
+/*
+===============
+idSessionLocal::SetPlayingSoundWorld
+===============
+*/
+void idSessionLocal::SetPlayingSoundWorld() {
+    Sys_Printf("void idSessionLocal::SetPlayingSoundWorld()\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::TimeHitch
+
+this is used by the sound system when an OnDemand sound is loaded, so the game action
+doesn't advance and get things out of sync
+===============
+*/
+void idSessionLocal::TimeHitch( int msec ) {
+    Sys_Printf("void idSessionLocal::TimeHitch( int msec )\r\n");
+}
+
+
+/*
+=================
+idSessionLocal::ReadCDKey
+=================
+*/
+void idSessionLocal::ReadCDKey( void ) {
+    Sys_Printf("void idSessionLocal::ReadCDKey( void )\r\n");
+}
+
+
+/*
+================
+idSessionLocal::WriteCDKey
+================
+*/
+void idSessionLocal::WriteCDKey( void ) {
+    Sys_Printf("void idSessionLocal::WriteCDKey( void )\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::ClearKey
+===============
+*/
+void idSessionLocal::ClearCDKey( bool valid[ 2 ] ) {
+    Sys_Printf("void idSessionLocal::ClearCDKey( bool valid[ 2 ] )\r\n");
+}
+
+
+/*
+================
+idSessionLocal::GetCDKey
+================
+*/
+const char *idSessionLocal::GetCDKey( bool xp ) {
+    Sys_Printf("char *idSessionLocal::GetCDKey( bool xp )\r\n");
+    return NULL;
+}
+
+
+// digits to letters table
+#define CDKEY_DIGITS "TWSBJCGD7PA23RLH"
+
+/*
+===============
+idSessionLocal::EmitGameAuth
+we toggled some key state to CDKEY_CHECKING. send a standalone auth packet to validate
+===============
+*/
+void idSessionLocal::EmitGameAuth( void ) {
+    Sys_Printf("void idSessionLocal::EmitGameAuth( void )\r\n");
+}
+
+
+/*
+================
+idSessionLocal::CheckKey
+the function will only modify keys to _OK or _CHECKING if the offline checks are passed
+if the function returns false, the offline checks failed, and offline_valid holds which keys are bad
+================
+*/
+bool idSessionLocal::CheckKey( const char *key, bool netConnect, bool offline_valid[ 2 ] ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idSessionLocal::CheckKey( const char *key, bool netConnect, bool offline_valid[ 2 ] )\r\n");
+    return retVal;
+}
+
+
+/*
+===============
+idSessionLocal::CDKeysAreValid
+checking that the key is present and uses only valid characters
+if d3xp is installed, check for a valid xpkey as well
+emit an auth packet to the master if possible and needed
+===============
+*/
+bool idSessionLocal::CDKeysAreValid( bool strict ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idSessionLocal::CDKeysAreValid( bool strict )\r\n");
+    return retVal;
+}
+
+
+/*
+===============
+idSessionLocal::WaitingForGameAuth
+===============
+*/
+bool idSessionLocal::WaitingForGameAuth( void ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idSessionLocal::WaitingForGameAuth( void )\r\n");
+    return retVal;
+}
+
+
+/*
+===============
+idSessionLocal::CDKeysAuthReply
+===============
+*/
+void idSessionLocal::CDKeysAuthReply( bool valid, const char *auth_msg ) {
+    Sys_Printf("void idSessionLocal::CDKeysAuthReply( bool valid, const char *auth_msg )\r\n");
+}
+
+
+/*
+===============
+idSessionLocal::GetCurrentMapName
+===============
+*/
+const char *idSessionLocal::GetCurrentMapName() {
+    Sys_Printf("char *idSessionLocal::GetCurrentMapName()\r\n");
+    return NULL;
+}
+
+
+/*
+===============
+idSessionLocal::GetSaveGameVersion
+===============
+*/
+int idSessionLocal::GetSaveGameVersion( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idSessionLocal::GetSaveGameVersion( void )\r\n");
+    return retVal;
+}
+
+
+/*
+===============
+idSessionLocal::GetAuthMsg
+===============
+*/
+const char *idSessionLocal::GetAuthMsg( void ) {
+    Sys_Printf("char *idSessionLocal::GetAuthMsg( void )\r\n");
+    return NULL;
+}
+

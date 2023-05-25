@@ -1,0 +1,378 @@
+/*
+ * gx_textures.cpp
+ *
+ *  Created on: 20 aug. 2012
+ *      Author: Danny
+ */
+
+#include<ogc/gx.h>
+#include<GL/gl.h>
+#include "../../idlib/precompiled.h"
+#include "../sys_local.h"
+
+#define MAX_GXTEXTURES		512
+
+typedef struct gxtexdesc_s {
+	GXTexObj 	gxTexObj;
+	byte *		data;
+	boolean		used;
+
+	u16 		width;
+	u16			height;
+
+	u8			gxFormat;
+	u8			gxWrapS;
+	u8			gxWrapT;
+	u8			gxFilterMin;
+
+	u8			gxFilterMax;
+	u8			gxMipMap;
+	s8			mipLevel;
+	u8			pad[1];
+
+} gxtexdesc_t;
+
+static gxtexdesc_t *gxtexdescs;
+static int gxtexsrchfree;
+static int gxcurrtexdesc;
+
+void qgx_InitTextures(void) {
+Sys_Printf(">>> qgx_InitTextures()\r\n");
+	gxtexdescs = (gxtexdesc_t *) Mem_Alloc32(MAX_GXTEXTURES * sizeof(gxtexdesc_t));
+	memset(gxtexdescs, 0x00, MAX_GXTEXTURES * sizeof(gxtexdesc_t));
+Sys_Printf(">>> gxtexdescs %p size %d element size %d\r\n", gxtexdescs, MAX_GXTEXTURES * sizeof(gxtexdesc_t), sizeof(gxtexdesc_t));
+	gxtexsrchfree = 0;
+	gxcurrtexdesc = 0;
+	if (GX_GetTexBufferSize(16, 16, GX_TF_IA4, GX_FALSE, 0) != 256) {
+		Sys_Error("GX_GetTexBufferSize() is fixed in this build, remove 2 * GX_GetTexBufferSize line\r\n");
+	}
+}
+
+/*
+static gxtexdesc_t *qgx_AllocTexDesc(void) {
+	int index = 0;
+	if (gxtexsrchfree < MAX_GXTEXTURES) {
+		for (index=gxtexsrchfree; index<MAX_GXTEXTURES; index++) {
+			if (!gxtexdescs[index].used) {
+				break;
+			}
+		}
+	} else {
+		Sys_Error("Out of gx_texture descriptors: > %d\r\n", MAX_GXTEXTURES);
+	}
+	gxtexsrchfree = index + 1;
+	gxtexdescs[index].used = true;
+	gxtexdescs[index].data = NULL;
+	return &gxtexdescs[index];
+}*/
+
+static int qgx_AllocTexDescIndex(void) {
+	int  index = 0;
+	if (gxtexsrchfree < MAX_GXTEXTURES) {
+		for (index=gxtexsrchfree; index<MAX_GXTEXTURES; index++) {
+			if (!gxtexdescs[index].used) {
+				break;
+			}
+		}
+	} else {
+		Sys_Error("Out of gx_texture descriptors: > %d\r\n", MAX_GXTEXTURES);
+	}
+	gxtexsrchfree = index + 1;
+	memset(&gxtexdescs[index], 0x00, sizeof(gxtexdesc_t));
+	gxtexdescs[index].used = true;
+	gxtexdescs[index].mipLevel = -1;
+
+	return index;
+}
+
+static void qgx_FreeTexDesc(int index) {
+	gxtexdescs[index].used = false;
+
+	if (index < gxtexsrchfree) {
+		gxtexsrchfree = index;
+	}
+}
+
+static int qgx_GLFilterToGX(int glFilter) {
+	switch(glFilter) {
+	case GL_LINEAR:
+		return GX_LINEAR;
+	case GL_NEAREST:
+		return GX_NEAR;
+	case GL_LINEAR_MIPMAP_LINEAR:
+		return GX_LIN_MIP_LIN;
+	case GL_NEAREST_MIPMAP_NEAREST:
+		Sys_Error("Unsupported GL Filter Min mode GL_NEAREST_MIPMAP_NEAREST\r\n");
+	case GL_NEAREST_MIPMAP_LINEAR:
+		Sys_Error("Unsupported GL Filter Min mode GL_NEAREST_MIPMAP_LINEAR\r\n");
+	case GL_LINEAR_MIPMAP_NEAREST:
+		Sys_Error("Unsupported GL Filter Min mode GL_LINEAR_MIPMAP_NEAREST\r\n");
+	default:
+		Sys_Error("Unsupported GL Filter Min mode %04X\r\n", glFilter);
+	}
+	return 0;
+}
+
+static int qgx_GLWrapModeToGX(int glWrapMode) {
+	switch(glWrapMode) {
+	case GL_REPEAT:
+		return GX_REPEAT;
+	case GL_CLAMP_TO_BORDER:
+		return GX_CLAMP;
+	case GL_CLAMP_TO_EDGE:
+		return GX_CLAMP;
+	default:
+		Sys_Error("Unsupported GL Wrap S mode %04X\r\n", glWrapMode);
+	}
+	return 0;
+}
+
+static u32 qgx_GLFmtToGX(int glFmt) {
+	switch(glFmt) {
+	case GL_INTENSITY8: // single byte for all channels
+	case GL_ALPHA8: // single byte, only alpha
+		return GX_TF_I4;
+	case GL_LUMINANCE8_ALPHA8: // two bytes, max quality
+		return GX_TF_IA4;
+	case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+	case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
+	case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+		return GX_TF_CMPR;
+	case GL_RGB5:
+	case GL_RGB8: // four bytes
+		return GX_TF_RGB565;
+	case GL_RGBA4:
+	case GL_RGBA8:
+		return GX_TF_RGB5A3;
+	// image_useNormalCompression should only be set to 1 on nv_10 and nv_20 paths
+	case GL_COLOR_INDEX8_EXT:
+		Sys_Error("Unsupported GL FMT: GL_COLOR_INDEX8_EXT\r\n");
+	}
+	Sys_Error("Unsupported GL FMT: %d\r\n", glFmt);
+
+}
+
+static void qgx_ReadColor(GXColor *color, int x, int y, int w, int inputFormat, byte *data) {
+	int datasize;
+	byte *address;
+
+	if (inputFormat == GL_RGBA) {
+		datasize = 4;
+	} else {
+		// assume A8
+		datasize = 1;
+	}
+
+	address = data + datasize * (x + y * w);
+
+	if (inputFormat == GL_RGBA) {
+		color->r = address[0];
+		color->g = address[1];
+		color->b = address[2];
+		color->a = address[3];
+	} else {
+/*		color->r = *address;
+		color->g = *address;
+		color->b = *address;
+		color->a = *address;
+*/
+Sys_Error("New GL input texformat needed %4X\r\n", inputFormat);
+	}
+}
+
+/**
+ * Write to RGB5A3 or RGB565 word
+ */
+static __inline__ void qgx_WriteColorTexel(GXColor *color, byte *dest, boolean toRGBA) {
+	u16 texel;
+	u16 *p = (u16 *)dest;
+
+	if (toRGBA) {
+		texel = 0x8000 | ((color->a & 0xE0)<<7) | ((color->r & 0xF0)<<4) | (color->g&0xF0) | ((color->b&0xF0)>>4);
+	} else {
+		texel = ((color->r & 0xF8)<<8) | ((color->g&0xFC)<<3) | ((color->b&0xF8)>>3);
+	}
+	*p = texel;
+}
+
+
+static void qgx_WriteColor(GXColor *color, int x, int y, int w, int gxfmt, byte *data) {
+	int xsize, ysize, blockx, blocky, blockw;
+	byte *address;
+
+	switch (gxfmt) {
+	case GX_TF_I4:
+		xsize = 8;
+		ysize = 8;
+		break;
+	case GX_TF_IA4:
+		xsize = 8;
+		ysize = 4;
+		break;
+	case GX_TF_CMPR:
+		xsize = 8;
+		ysize = 8;
+		break;
+	case GX_TF_RGB565:
+		xsize = 4;
+		ysize = 4;
+		break;
+	case GX_TF_RGB5A3:
+		xsize = 4;
+		ysize = 4;
+		break;
+	default:
+		Sys_Error("Unsupported format: %d\r\n", gxfmt);
+	}
+	blockx = x / xsize;
+	blocky = y / ysize;
+	blockw = w / xsize;
+	address = data + 32 * (blockx + blocky * blockw);
+
+	if (gxfmt == GX_TF_RGB5A3 || gxfmt == GX_TF_RGB565) {
+		address += 2 * (x % xsize + (y % ysize) * xsize);
+		qgx_WriteColorTexel(color, address, gxfmt == GX_TF_RGB5A3);
+	} else if (gxfmt == GX_TF_IA4) {
+		address += (x % xsize + (y % ysize) * xsize);
+		*address = (color->r & 0xF0) | ((color->a & 0xF0) >> 4);
+	} else if (gxfmt == GX_TF_I4) {
+		address += (x % xsize + (y % ysize) * xsize) / 2;
+
+	} else {
+		// TODO
+	}
+}
+
+// -------------------------------------------------------
+
+void qgxInitTextures(void) {
+	qgx_InitTextures();
+}
+
+void qgxTexImage2D(int miplevel, int internalFormat, int width, int height, int inputFormat, byte * data) {
+Sys_Printf(">>> void qgxTexImage2D(%d, %04X, %d, %d, %04X, %p)\r\n", miplevel, internalFormat, width, height, inputFormat, data);
+	byte *buf;
+	u32 gxfmt, gxsize;
+	gxtexdesc_t *texdesc;
+
+	texdesc = &gxtexdescs[gxcurrtexdesc];
+Sys_Printf(">>> qgxTexImage2D using texdesc %p %d\r\n", texdesc, gxcurrtexdesc);
+
+	if (!texdesc->used) {
+		Sys_Error("Texture not bound: %d\r\n", gxcurrtexdesc);
+	}
+
+	// DRS TODO: allow mipMaps?
+	if (texdesc->mipLevel > -1 && texdesc->mipLevel != miplevel) {
+Sys_Printf(">>> qgxTexImage2D return mip already set %d mip tried %d\r\n", texdesc->mipLevel, miplevel);
+		return;
+	}
+
+	gxfmt = qgx_GLFmtToGX(internalFormat);
+
+Sys_Printf(">>> qgxTexImage2D gxfmt %d\r\n", gxfmt);
+	switch(gxfmt) {
+	case GX_TF_IA4:
+		gxsize = 2 * GX_GetTexBufferSize(width, height, gxfmt, GX_FALSE, 0); // broken?
+		break;
+	default:
+		gxsize = GX_GetTexBufferSize(width, height, gxfmt, GX_FALSE, 0);
+	}
+Sys_Printf(">>> qgxTexImage2D size %d\r\n", gxsize);
+
+	// create data if necessary
+	if (!texdesc->data) {
+		buf = (byte *) Mem_Alloc32(gxsize);
+	}
+
+	if (inputFormat != GL_COMPRESSED_RGB_S3TC_DXT1_EXT &&
+		inputFormat != GL_COMPRESSED_RGBA_S3TC_DXT3_EXT &&
+		inputFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT) {
+
+		for (int y=0; y<height; y++) {
+			for (int x=0; x<width; x++) {
+				GXColor color;
+				// TODO step conform GX blocksize so that divides are avoided in WriteColor()
+				qgx_ReadColor(&color, x, y, width, inputFormat, data);
+				qgx_WriteColor(&color, x, y, width, gxfmt, buf);
+			}
+		}
+	} else {
+		// TODO
+	}
+
+	texdesc->data = buf;
+	texdesc->width = width;
+	texdesc->height = height;
+	texdesc->gxFormat = gxfmt;
+	texdesc->gxWrapS = GX_REPEAT;
+	texdesc->gxWrapT = GX_REPEAT;
+	texdesc->gxMipMap = GX_FALSE;
+	texdesc->mipLevel = miplevel;
+
+Sys_Printf(">>> loading to GX\r\n");
+
+	// load into gx
+	GX_InitTexObj(&texdesc->gxTexObj, texdesc->data, texdesc->width, texdesc->height, texdesc->gxFormat, texdesc->gxWrapS, texdesc->gxWrapT, texdesc->gxMipMap);
+	//GX_InitTexObjLOD(&texdesc->gxTexObj, GX_LINEAR, GX_LINEAR, 0, 0, 0.0f, 0, GX_FALSE, 0);
+}
+
+
+void qgxSetGLTexParam(int glWrapS, int glWrapT, int glFilterMin, int glFilterMax, int glAniso) {
+	u8 gxWrapS, gxWrapT, gxFilterMin, gxFilterMax, gxAniso;
+	gxtexdesc_t *texdesc;
+
+Sys_Printf(">>> qgxSetGLTexParam() %02X %02X %02X %02X %02X\r\n", glWrapS, glWrapT, glFilterMin, glFilterMax, glAniso);
+
+	texdesc = &gxtexdescs[gxcurrtexdesc];
+
+	if (!texdesc->used) {
+		Sys_Error("Texture not bound: %d\r\n", gxcurrtexdesc);
+	}
+
+	gxWrapS = qgx_GLWrapModeToGX(glWrapS);
+	gxWrapT = qgx_GLWrapModeToGX(glWrapT);
+	gxFilterMin = qgx_GLFilterToGX(glFilterMin);
+	gxFilterMax = qgx_GLFilterToGX(glFilterMax);
+
+	// DRS TODO: aniso
+
+	texdesc->gxWrapS = GX_REPEAT;
+	texdesc->gxWrapT = GX_REPEAT;
+	texdesc->gxMipMap = GX_FALSE;
+
+	// load into gx
+	GX_InitTexObj(&texdesc->gxTexObj, texdesc->data, texdesc->width, texdesc->height, texdesc->gxFormat, texdesc->gxWrapS, texdesc->gxWrapT, texdesc->gxMipMap);
+	//GX_InitTexObjLOD(&texdesc->gxTexObj, gxFilterMin, gxFilterMax, 0, 0, 0.0f, 0, GX_FALSE, GX_ANISO_1);
+
+}
+
+void qgxGenTextures(int num, unsigned int *list) {
+Sys_Printf(">>> qgxGenTextures() %d, %p\r\n", num, list);
+	for (int i=0; i<num; i++) {
+Sys_Printf(">>> qgxGenTextures() %d\r\n", i);
+		list[i] = (unsigned int) qgx_AllocTexDescIndex();
+	}
+}
+
+
+void qgxDeleteTextures(int num, unsigned int *list) {
+Sys_Printf(">>> qgxDeleteTextures() %d, %p\r\n", num, list);
+	for (int i=0; i<num; i++) {
+
+Sys_Printf(">>> qgxBindTexture() %d\r\n", i);
+		if (gxtexdescs[list[i]].data) {
+			Mem_Free32(gxtexdescs[list[i]].data);
+		}
+		qgx_FreeTexDesc((int) list[i]);
+	}
+}
+
+
+void qgxBindTexture(unsigned int texnum) {
+Sys_Printf(">>> qgxBindTexture() %d\r\n", texnum);
+
+	gxcurrtexdesc = texnum;
+}
+
+

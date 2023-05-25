@@ -1,0 +1,5 @@
+<filepath="normalmap.bmp" id="normal_map" colfmt="4"/>
+<filepath="lightmap.bmp" id="light_map" colfmt=4 />
+<filepath="reflectionmap.bmp" id="specular_map" colfmt=4 />
+
+

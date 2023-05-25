@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">&#x0A;<refactoring comment="Rename resource &apos;DoomGX/src/sys/ogc/sys_stub.cpp&apos; to &apos;sys_ogc.cpp&apos;" description="Rename resource &apos;sys_stub.cpp&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="src/sys/ogc/sys_stub.cpp" name="sys_ogc.cpp" stamp="1341407048105" updateReferences="true"/>&#x0A;<refactoring comment="Rename resource &apos;DoomGX/src/sys/ogc/util_stub.cpp&apos; to &apos;util_ogc.cpp&apos;" description="Rename resource &apos;util_stub.cpp&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="src/sys/ogc/util_stub.cpp" name="util_ogc.cpp" stamp="1341407058470" updateReferences="true"/>
+</session>

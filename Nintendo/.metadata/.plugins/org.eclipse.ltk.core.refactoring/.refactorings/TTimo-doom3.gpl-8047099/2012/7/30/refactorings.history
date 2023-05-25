@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;TTimo-doom3.gpl-8047099/Makefile&apos; to &apos;_Makefile&apos;" description="Rename resource &apos;Makefile&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="Makefile" name="_Makefile" stamp="1343570810034" updateReferences="true"/>
+</session>

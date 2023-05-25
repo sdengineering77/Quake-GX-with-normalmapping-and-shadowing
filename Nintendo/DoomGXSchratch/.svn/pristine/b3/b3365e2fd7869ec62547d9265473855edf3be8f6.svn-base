@@ -1,0 +1,945 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
+
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
+#include "../idlib/precompiled.h"
+#pragma hdrstop
+
+#include "tr_local.h"
+#include "Model_local.h"
+#include "Model_ase.h"
+#include "Model_lwo.h"
+#include "Model_ma.h"
+
+idCVar idRenderModelStatic::r_mergeModelSurfaces( "r_mergeModelSurfaces", "1", CVAR_BOOL|CVAR_RENDERER, "combine model surfaces with the same material" );
+idCVar idRenderModelStatic::r_slopVertex( "r_slopVertex", "0.01", CVAR_RENDERER, "merge xyz coordinates this far apart" );
+idCVar idRenderModelStatic::r_slopTexCoord( "r_slopTexCoord", "0.001", CVAR_RENDERER, "merge texture coordinates this far apart" );
+idCVar idRenderModelStatic::r_slopNormal( "r_slopNormal", "0.02", CVAR_RENDERER, "merge normals that dot less than this" );
+
+/*
+================
+idRenderModelStatic::idRenderModelStatic
+================
+*/
+idRenderModelStatic::idRenderModelStatic() {
+#ifdef TRACE_CONSTRUCTS
+    Sys_DebugPrintf("idRenderModelStatic::idRenderModelStatic() size %d\r\n", sizeof(*this));
+#endif
+
+	name = "<undefined>";
+	bounds.Clear();
+	lastModifiedFrame = 0;
+	lastArchivedFrame = 0;
+	overlaysAdded = 0;
+	shadowHull = NULL;
+	isStaticWorldModel = false;
+	defaulted = false;
+	purged = false;
+	fastLoad = false;
+	reloadable = true;
+	levelLoadReferenced = false;
+	timeStamp = 0;
+}
+
+/*
+================
+idRenderModelStatic::~idRenderModelStatic
+================
+*/
+idRenderModelStatic::~idRenderModelStatic() {
+	PurgeModel();
+}
+
+/*
+==============
+idRenderModelStatic::Print
+==============
+*/
+void idRenderModelStatic::Print() const {
+    Sys_Printf("void idRenderModelStatic::Print()\r\n");
+}
+
+
+/*
+==============
+idRenderModelStatic::Memory
+==============
+*/
+int idRenderModelStatic::Memory() const {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idRenderModelStatic::Memory()\r\n");
+    return retVal;
+}
+
+
+/*
+==============
+idRenderModelStatic::List
+==============
+*/
+void idRenderModelStatic::List() const {
+    Sys_Printf("void idRenderModelStatic::List()\r\n");
+}
+
+
+/*
+================
+idRenderModelStatic::IsDefaultModel
+================
+*/
+bool idRenderModelStatic::IsDefaultModel() const {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idRenderModelStatic::IsDefaultModel()\r\n");
+    return retVal;
+}
+
+
+/*
+================
+AddCubeFace
+================
+*/
+static void AddCubeFace( srfTriangles_t *tri, idVec3 v1, idVec3 v2, idVec3 v3, idVec3 v4 ) {
+	tri->verts[tri->numVerts+0].Clear();
+	tri->verts[tri->numVerts+0].xyz = v1 * 8;
+	tri->verts[tri->numVerts+0].st[0] = 0;
+	tri->verts[tri->numVerts+0].st[1] = 0;
+
+	tri->verts[tri->numVerts+1].Clear();
+	tri->verts[tri->numVerts+1].xyz = v2 * 8;
+	tri->verts[tri->numVerts+1].st[0] = 1;
+	tri->verts[tri->numVerts+1].st[1] = 0;
+
+	tri->verts[tri->numVerts+2].Clear();
+	tri->verts[tri->numVerts+2].xyz = v3 * 8;
+	tri->verts[tri->numVerts+2].st[0] = 1;
+	tri->verts[tri->numVerts+2].st[1] = 1;
+
+	tri->verts[tri->numVerts+3].Clear();
+	tri->verts[tri->numVerts+3].xyz = v4 * 8;
+	tri->verts[tri->numVerts+3].st[0] = 0;
+	tri->verts[tri->numVerts+3].st[1] = 1;
+
+	tri->indexes[tri->numIndexes+0] = tri->numVerts + 0;
+	tri->indexes[tri->numIndexes+1] = tri->numVerts + 1;
+	tri->indexes[tri->numIndexes+2] = tri->numVerts + 2;
+	tri->indexes[tri->numIndexes+3] = tri->numVerts + 0;
+	tri->indexes[tri->numIndexes+4] = tri->numVerts + 2;
+	tri->indexes[tri->numIndexes+5] = tri->numVerts + 3;
+
+	tri->numVerts += 4;
+	tri->numIndexes += 6;
+}
+
+
+/*
+================
+idRenderModelStatic::MakeDefaultModel
+================
+*/
+void idRenderModelStatic::MakeDefaultModel() {
+
+	defaulted = true;
+
+	// throw out any surfaces we already have
+	PurgeModel();
+
+	// create one new surface
+	modelSurface_t	surf;
+
+	srfTriangles_t *tri = R_AllocStaticTriSurf();
+
+	surf.shader = tr.defaultMaterial;
+	surf.geometry = tri;
+
+	R_AllocStaticTriSurfVerts( tri, 24 );
+	R_AllocStaticTriSurfIndexes( tri, 36 );
+
+	AddCubeFace( tri, idVec3(-1, 1, 1), idVec3(1, 1, 1), idVec3(1, -1, 1), idVec3(-1, -1, 1) );
+	AddCubeFace( tri, idVec3(-1, 1, -1), idVec3(-1, -1, -1), idVec3(1, -1, -1), idVec3(1, 1, -1) );
+
+	AddCubeFace( tri, idVec3(1, -1, 1), idVec3(1, 1, 1), idVec3(1, 1, -1), idVec3(1, -1, -1) );
+	AddCubeFace( tri, idVec3(-1, -1, 1), idVec3(-1, -1, -1), idVec3(-1, 1, -1), idVec3(-1, 1, 1) );
+
+	AddCubeFace( tri, idVec3(-1, -1, 1), idVec3(1, -1, 1), idVec3(1, -1, -1), idVec3(-1, -1, -1) );
+	AddCubeFace( tri, idVec3(-1, 1, 1), idVec3(-1, 1, -1), idVec3(1, 1, -1), idVec3(1, 1, 1) );
+
+	tri->generateNormals = true;
+
+	AddSurface( surf );
+	FinishSurfaces();
+}
+
+
+/*
+================
+idRenderModelStatic::PartialInitFromFile
+================
+*/
+void idRenderModelStatic::PartialInitFromFile( const char *fileName ) {
+    Sys_Printf("void idRenderModelStatic::PartialInitFromFile( const char *fileName )\r\n");
+}
+
+
+/*
+================
+idRenderModelStatic::InitFromFile
+================
+*/
+void idRenderModelStatic::InitFromFile( const char *fileName ) {
+    Sys_Printf("void idRenderModelStatic::InitFromFile( const char *fileName )\r\n");
+}
+
+
+/*
+================
+idRenderModelStatic::LoadModel
+================
+*/
+void idRenderModelStatic::LoadModel() {
+    Sys_Printf("void idRenderModelStatic::LoadModel()\r\n");
+}
+
+
+/*
+================
+idRenderModelStatic::InitEmpty
+================
+*/
+void idRenderModelStatic::InitEmpty( const char *fileName ) {
+	// model names of the form _area* are static parts of the
+	// world, and have already been considered for optimized shadows
+	// other model names are inline entity models, and need to be
+	// shadowed normally
+	if ( !idStr::Cmpn( fileName, "_area", 5 ) ) {
+		isStaticWorldModel = true;
+	} else {
+		isStaticWorldModel = false;
+	}
+
+	name = fileName;
+	reloadable = false;	// if it didn't come from a file, we can't reload it
+	PurgeModel();
+	purged = false;
+	bounds.Zero();
+}
+
+
+/*
+================
+idRenderModelStatic::AddSurface
+================
+*/
+void idRenderModelStatic::AddSurface( modelSurface_t surface ) {
+	surfaces.Append( surface );
+	if ( surface.geometry ) {
+		bounds += surface.geometry->bounds;
+	}
+}
+
+/*
+================
+idRenderModelStatic::Name
+================
+*/
+const char *idRenderModelStatic::Name() const {
+	return name;
+}
+
+/*
+================
+idRenderModelStatic::Timestamp
+================
+*/
+ID_TIME_T idRenderModelStatic::Timestamp() const {
+	return timeStamp;
+}
+
+/*
+================
+idRenderModelStatic::NumSurfaces
+================
+*/
+int idRenderModelStatic::NumSurfaces() const {
+	return surfaces.Num();
+}
+
+/*
+================
+idRenderModelStatic::NumBaseSurfaces
+================
+*/
+int idRenderModelStatic::NumBaseSurfaces() const {
+	return surfaces.Num() - overlaysAdded;
+}
+
+/*
+================
+idRenderModelStatic::Surface
+================
+*/
+const modelSurface_t *idRenderModelStatic::Surface( int surfaceNum ) const {
+	return &surfaces[surfaceNum];
+}
+
+/*
+================
+idRenderModelStatic::AllocSurfaceTriangles
+================
+*/
+srfTriangles_t *idRenderModelStatic::AllocSurfaceTriangles( int numVerts, int numIndexes ) const {
+	srfTriangles_t *tri = R_AllocStaticTriSurf();
+	R_AllocStaticTriSurfVerts( tri, numVerts );
+	R_AllocStaticTriSurfIndexes( tri, numIndexes );
+	return tri;
+}
+
+/*
+================
+idRenderModelStatic::FreeSurfaceTriangles
+================
+*/
+void idRenderModelStatic::FreeSurfaceTriangles( srfTriangles_t *tris ) const {
+	R_FreeStaticTriSurf( tris );
+}
+
+/*
+================
+idRenderModelStatic::ShadowHull
+================
+*/
+srfTriangles_t *idRenderModelStatic::ShadowHull() const {
+	return shadowHull;
+}
+
+/*
+================
+idRenderModelStatic::IsStaticWorldModel
+================
+*/
+bool idRenderModelStatic::IsStaticWorldModel() const {
+	return isStaticWorldModel;
+}
+
+/*
+================
+idRenderModelStatic::IsDynamicModel
+================
+*/
+dynamicModel_t idRenderModelStatic::IsDynamicModel() const {
+	// dynamic subclasses will override this
+	return DM_STATIC;
+}
+
+/*
+================
+idRenderModelStatic::IsReloadable
+================
+*/
+bool idRenderModelStatic::IsReloadable() const {
+	return reloadable;
+}
+
+/*
+================
+idRenderModelStatic::Bounds
+================
+*/
+idBounds idRenderModelStatic::Bounds( const struct renderEntity_s *mdef ) const {
+	return bounds;
+}
+
+/*
+================
+idRenderModelStatic::DepthHack
+================
+*/
+float idRenderModelStatic::DepthHack() const {
+	return 0.0f;
+}
+
+/*
+================
+idRenderModelStatic::InstantiateDynamicModel
+================
+*/
+idRenderModel *idRenderModelStatic::InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel ) {
+	if ( cachedModel ) {
+		delete cachedModel;
+		cachedModel = NULL;
+	}
+	common->Error( "InstantiateDynamicModel called on static model '%s'", name.c_str() );
+	return NULL;
+}
+
+/*
+================
+idRenderModelStatic::NumJoints
+================
+*/
+int idRenderModelStatic::NumJoints( void ) const {
+	return 0;
+}
+
+/*
+================
+idRenderModelStatic::GetJoints
+================
+*/
+const idMD5Joint *idRenderModelStatic::GetJoints( void ) const {
+	return NULL;
+}
+
+/*
+================
+idRenderModelStatic::GetJointHandle
+================
+*/
+jointHandle_t idRenderModelStatic::GetJointHandle( const char *name ) const {
+	return INVALID_JOINT;
+}
+
+/*
+================
+idRenderModelStatic::GetJointName
+================
+*/
+const char * idRenderModelStatic::GetJointName( jointHandle_t handle ) const {
+	return "";
+}
+
+/*
+================
+idRenderModelStatic::GetDefaultPose
+================
+*/
+const idJointQuat *idRenderModelStatic::GetDefaultPose( void ) const {
+	return NULL;
+}
+
+/*
+================
+idRenderModelStatic::NearestJoint
+================
+*/
+int idRenderModelStatic::NearestJoint( int surfaceNum, int a, int b, int c ) const {
+	return INVALID_JOINT;
+}
+
+
+//=====================================================================
+
+
+/*
+================
+idRenderModelStatic::FinishSurfaces
+
+The mergeShadows option allows surfaces with different textures to share
+silhouette edges for shadow calculation, instead of leaving shared edges
+hanging.
+
+If any of the original shaders have the noSelfShadow flag set, the surfaces
+can't be merged, because they will need to be drawn in different order.
+
+If there is only one surface, a separate merged surface won't be generated.
+
+A model with multiple surfaces can't later have a skinned shader change the
+state of the noSelfShadow flag.
+
+-----------------
+
+Creates mirrored copies of two sided surfaces with normal maps, which would
+otherwise light funny.
+
+Extends the bounds of deformed surfaces so they don't cull incorrectly at screen edges.
+
+================
+*/
+void idRenderModelStatic::FinishSurfaces() {
+	int			i;
+	int			totalVerts, totalIndexes;
+
+	purged = false;
+
+	// make sure we don't have a huge bounds even if we don't finish everything
+	bounds.Zero();
+
+	if ( surfaces.Num() == 0 ) {
+		return;
+	}
+
+	// renderBump doesn't care about most of this
+	if ( fastLoad ) {
+		bounds.Zero();
+		for ( i = 0 ; i < surfaces.Num() ; i++ ) {
+			const modelSurface_t	*surf = &surfaces[i];
+
+			R_BoundTriSurf( surf->geometry );
+			bounds.AddBounds( surf->geometry->bounds );
+		}
+
+		return;
+	}
+
+	// cleanup all the final surfaces, but don't create sil edges
+	totalVerts = 0;
+	totalIndexes = 0;
+
+	// decide if we are going to merge all the surfaces into one shadower
+	int	numOriginalSurfaces = surfaces.Num();
+
+	// make sure there aren't any NULL shaders or geometry
+	for ( i = 0 ; i < numOriginalSurfaces ; i++ ) {
+		const modelSurface_t	*surf = &surfaces[i];
+
+		if ( surf->geometry == NULL || surf->shader == NULL ) {
+			MakeDefaultModel();
+			common->Error( "Model %s, surface %i had NULL geometry", name.c_str(), i );
+		}
+		if ( surf->shader == NULL ) {
+			MakeDefaultModel();
+			common->Error( "Model %s, surface %i had NULL shader", name.c_str(), i );
+		}
+	}
+
+	// duplicate and reverse triangles for two sided bump mapped surfaces
+	// note that this won't catch surfaces that have their shaders dynamically
+	// changed, and won't work with animated models.
+	// It is better to create completely separate surfaces, rather than
+	// add vertexes and indexes to the existing surface, because the
+	// tangent generation wouldn't like the acute shared edges
+	for ( i = 0 ; i < numOriginalSurfaces ; i++ ) {
+		const modelSurface_t	*surf = &surfaces[i];
+
+		if ( surf->shader->ShouldCreateBackSides() ) {
+			srfTriangles_t *newTri;
+
+			newTri = R_CopyStaticTriSurf( surf->geometry );
+			R_ReverseTriangles( newTri );
+
+			modelSurface_t	newSurf;
+
+			newSurf.shader = surf->shader;
+			newSurf.geometry = newTri;
+
+			AddSurface( newSurf );
+		}
+	}
+
+	// clean the surfaces
+	for ( i = 0 ; i < surfaces.Num() ; i++ ) {
+		const modelSurface_t	*surf = &surfaces[i];
+
+		R_CleanupTriangles( surf->geometry, surf->geometry->generateNormals, true, surf->shader->UseUnsmoothedTangents() );
+		if ( surf->shader->SurfaceCastsShadow() ) {
+			totalVerts += surf->geometry->numVerts;
+			totalIndexes += surf->geometry->numIndexes;
+		}
+	}
+
+	// add up the total surface area for development information
+	for ( i = 0 ; i < surfaces.Num() ; i++ ) {
+		const modelSurface_t	*surf = &surfaces[i];
+		srfTriangles_t	*tri = surf->geometry;
+
+		for ( int j = 0 ; j < tri->numIndexes ; j += 3 ) {
+			float	area = idWinding::TriangleArea( tri->verts[tri->indexes[j]].xyz,
+				 tri->verts[tri->indexes[j+1]].xyz,  tri->verts[tri->indexes[j+2]].xyz );
+			const_cast<idMaterial *>(surf->shader)->AddToSurfaceArea( area );
+		}
+	}
+
+	// calculate the bounds
+	if ( surfaces.Num() == 0 ) {
+		bounds.Zero();
+	} else {
+		bounds.Clear();
+		for ( i = 0 ; i < surfaces.Num() ; i++ ) {
+			modelSurface_t	*surf = &surfaces[i];
+
+			// if the surface has a deformation, increase the bounds
+			// the amount here is somewhat arbitrary, designed to handle
+			// autosprites and flares, but could be done better with exact
+			// deformation information.
+			// Note that this doesn't handle deformations that are skinned in
+			// at run time...
+			if ( surf->shader->Deform() != DFRM_NONE ) {
+				srfTriangles_t	*tri = surf->geometry;
+				idVec3	mid = ( tri->bounds[1] + tri->bounds[0] ) * 0.5f;
+				float	radius = ( tri->bounds[0] - mid ).Length();
+				radius += 20.0f;
+
+				tri->bounds[0][0] = mid[0] - radius;
+				tri->bounds[0][1] = mid[1] - radius;
+				tri->bounds[0][2] = mid[2] - radius;
+
+				tri->bounds[1][0] = mid[0] + radius;
+				tri->bounds[1][1] = mid[1] + radius;
+				tri->bounds[1][2] = mid[2] + radius;
+			}
+
+			// add to the model bounds
+			bounds.AddBounds( surf->geometry->bounds );
+
+		}
+	}
+}
+
+
+/*
+=================
+idRenderModelStatic::ConvertASEToModelSurfaces
+=================
+*/
+typedef struct matchVert_s {
+	struct matchVert_s	*next;
+	int		v, tv;
+	byte	color[4];
+	idVec3	normal;
+} matchVert_t;
+
+bool idRenderModelStatic::ConvertASEToModelSurfaces( const struct aseModel_s *ase ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idRenderModelStatic::ConvertASEToModelSurfaces( const struct aseModel_s *ase )\r\n");
+    return retVal;
+}
+
+
+/*
+=================
+idRenderModelStatic::ConvertLWOToModelSurfaces
+=================
+*/
+bool idRenderModelStatic::ConvertLWOToModelSurfaces( const struct st_lwObject *lwo ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idRenderModelStatic::ConvertLWOToModelSurfaces( const struct st_lwObject *lwo )\r\n");
+    return retVal;
+}
+
+
+/*
+=================
+idRenderModelStatic::ConvertLWOToASE
+=================
+*/
+struct aseModel_s *idRenderModelStatic::ConvertLWOToASE( const struct st_lwObject *obj, const char *fileName ) {
+    Sys_Printf("aseModel_s *idRenderModelStatic::ConvertLWOToASE( const struct st_lwObject *obj, const char *fileName )\r\n");
+    return NULL;
+}
+
+
+/*
+=================
+idRenderModelStatic::ConvertMAToModelSurfaces
+=================
+*/
+bool idRenderModelStatic::ConvertMAToModelSurfaces (const struct maModel_s *ma ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idRenderModelStatic::ConvertMAToModelSurfaces (const struct maModel_s *ma )\r\n");
+    return retVal;
+}
+
+
+/*
+=================
+idRenderModelStatic::LoadASE
+=================
+*/
+bool idRenderModelStatic::LoadASE( const char *fileName ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idRenderModelStatic::LoadASE( const char *fileName )\r\n");
+    return retVal;
+}
+
+
+/*
+=================
+idRenderModelStatic::LoadLWO
+=================
+*/
+bool idRenderModelStatic::LoadLWO( const char *fileName ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idRenderModelStatic::LoadLWO( const char *fileName )\r\n");
+    return retVal;
+}
+
+
+/*
+=================
+idRenderModelStatic::LoadMA
+=================
+*/
+bool idRenderModelStatic::LoadMA( const char *fileName ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idRenderModelStatic::LoadMA( const char *fileName )\r\n");
+    return retVal;
+}
+
+
+/*
+=================
+idRenderModelStatic::LoadFLT
+
+USGS height map data for megaTexture experiments
+=================
+*/
+bool idRenderModelStatic::LoadFLT( const char *fileName ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idRenderModelStatic::LoadFLT( const char *fileName )\r\n");
+    return retVal;
+}
+
+
+
+//=============================================================================
+
+/*
+================
+idRenderModelStatic::PurgeModel
+================
+*/
+void idRenderModelStatic::PurgeModel() {
+	int		i;
+	modelSurface_t	*surf;
+
+Sys_Printf(">>> void idRenderModelStatic::PurgeModel() surfaces.Num() %d \r\n", surfaces.Num());
+	for ( i = 0 ; i < surfaces.Num() ; i++ ) {
+		surf = &surfaces[i];
+
+		if ( surf->geometry ) {
+			R_FreeStaticTriSurf( surf->geometry );
+		}
+	}
+	surfaces.Clear();
+
+	purged = true;
+Sys_Printf(">>> END void idRenderModelStatic::PurgeModel()\r\n");
+}
+
+
+/*
+==============
+idRenderModelStatic::FreeVertexCache
+
+We are about to restart the vertex cache, so dump everything
+==============
+*/
+void idRenderModelStatic::FreeVertexCache( void ) {
+    Sys_Printf("void idRenderModelStatic::FreeVertexCache( void )\r\n");
+}
+
+
+/*
+================
+idRenderModelStatic::ReadFromDemoFile
+================
+*/
+void idRenderModelStatic::ReadFromDemoFile( class idDemoFile *f ) {
+	PurgeModel();
+
+	InitEmpty( f->ReadHashString() );
+
+	int i, j, numSurfaces;
+	f->ReadInt( numSurfaces );
+
+	for ( i = 0 ; i < numSurfaces ; i++ ) {
+		modelSurface_t	surf;
+
+		surf.shader = declManager->FindMaterial( f->ReadHashString() );
+
+		srfTriangles_t	*tri = R_AllocStaticTriSurf();
+
+		f->ReadInt( tri->numIndexes );
+		R_AllocStaticTriSurfIndexes( tri, tri->numIndexes );
+		for ( j = 0; j < tri->numIndexes; ++j )
+			f->ReadInt( (int&)tri->indexes[j] );
+
+		f->ReadInt( tri->numVerts );
+		R_AllocStaticTriSurfVerts( tri, tri->numVerts );
+		for ( j = 0; j < tri->numVerts; ++j ) {
+			f->ReadVec3( tri->verts[j].xyz );
+			f->ReadVec2( tri->verts[j].st );
+			f->ReadVec3( tri->verts[j].normal );
+			f->ReadVec3( tri->verts[j].tangents[0] );
+			f->ReadVec3( tri->verts[j].tangents[1] );
+			f->ReadUnsignedChar( tri->verts[j].color[0] );
+			f->ReadUnsignedChar( tri->verts[j].color[1] );
+			f->ReadUnsignedChar( tri->verts[j].color[2] );
+			f->ReadUnsignedChar( tri->verts[j].color[3] );
+		}
+
+		surf.geometry = tri;
+
+		this->AddSurface( surf );
+	}
+	this->FinishSurfaces();
+}
+
+/*
+================
+idRenderModelStatic::WriteToDemoFile
+================
+*/
+void idRenderModelStatic::WriteToDemoFile( class idDemoFile *f ) {
+	int	data[1];
+
+	// note that it has been updated
+	lastArchivedFrame = tr.frameCount;
+
+	data[0] = DC_DEFINE_MODEL;
+	f->WriteInt( data[0] );
+	f->WriteHashString( this->Name() );
+
+	int i, j, iData = surfaces.Num();
+	f->WriteInt( iData );
+
+	for ( i = 0 ; i < surfaces.Num() ; i++ ) {
+		const modelSurface_t	*surf = &surfaces[i];
+
+		f->WriteHashString( surf->shader->GetName() );
+
+		srfTriangles_t *tri = surf->geometry;
+		f->WriteInt( tri->numIndexes );
+		for ( j = 0; j < tri->numIndexes; ++j )
+			f->WriteInt( (int&)tri->indexes[j] );
+		f->WriteInt( tri->numVerts );
+		for ( j = 0; j < tri->numVerts; ++j ) {
+			f->WriteVec3( tri->verts[j].xyz );
+			f->WriteVec2( tri->verts[j].st );
+			f->WriteVec3( tri->verts[j].normal );
+			f->WriteVec3( tri->verts[j].tangents[0] );
+			f->WriteVec3( tri->verts[j].tangents[1] );
+			f->WriteUnsignedChar( tri->verts[j].color[0] );
+			f->WriteUnsignedChar( tri->verts[j].color[1] );
+			f->WriteUnsignedChar( tri->verts[j].color[2] );
+			f->WriteUnsignedChar( tri->verts[j].color[3] );
+		}
+	}
+}
+
+/*
+================
+idRenderModelStatic::IsLoaded
+================
+*/
+bool idRenderModelStatic::IsLoaded( void ) {
+	return !purged;
+}
+
+/*
+================
+idRenderModelStatic::SetLevelLoadReferenced
+================
+*/
+void idRenderModelStatic::SetLevelLoadReferenced( bool referenced ) {
+	levelLoadReferenced = referenced;
+}
+
+/*
+================
+idRenderModelStatic::IsLevelLoadReferenced
+================
+*/
+bool idRenderModelStatic::IsLevelLoadReferenced( void ) {
+	return levelLoadReferenced;
+}
+
+/*
+=================
+idRenderModelStatic::TouchData
+=================
+*/
+void idRenderModelStatic::TouchData( void ) {
+	for ( int i = 0 ; i < surfaces.Num() ; i++ ) {
+		const modelSurface_t	*surf = &surfaces[i];
+
+		// re-find the material to make sure it gets added to the
+		// level keep list
+		declManager->FindMaterial( surf->shader->GetName() );
+	}
+}
+
+/*
+=================
+idRenderModelStatic::DeleteSurfaceWithId
+=================
+*/
+bool idRenderModelStatic::DeleteSurfaceWithId( int id ) {
+	int i;
+
+	for ( i = 0; i < surfaces.Num(); i++ ) {
+		if ( surfaces[i].id == id ) {
+			R_FreeStaticTriSurf( surfaces[i].geometry );
+			surfaces.RemoveIndex( i );
+			return true;
+		}
+	}
+	return false;
+}
+
+/*
+=================
+idRenderModelStatic::DeleteSurfacesWithNegativeId
+=================
+*/
+void idRenderModelStatic::DeleteSurfacesWithNegativeId( void ) {
+	int i;
+
+	for ( i = 0; i < surfaces.Num(); i++ ) {
+		if ( surfaces[i].id < 0 ) {
+			R_FreeStaticTriSurf( surfaces[i].geometry );
+			surfaces.RemoveIndex( i );
+			i--;
+		}
+	}
+}
+
+/*
+=================
+idRenderModelStatic::FindSurfaceWithId
+=================
+*/
+bool idRenderModelStatic::FindSurfaceWithId( int id, int &surfaceNum ) {
+	int i;
+
+	for ( i = 0; i < surfaces.Num(); i++ ) {
+		if ( surfaces[i].id == id ) {
+			surfaceNum = i;
+			return true;
+		}
+	}
+	return false;
+}

@@ -1,0 +1,437 @@
+/**
+ * GPL License blah blah blah....
+ * 
+ * DRS
+ *
+ */
+
+
+#include "quakedef.h"
+
+extern int glow_texture_object;
+
+typedef enum {
+	gx_noShader,
+	gx_ambientShader,
+	gx_worldBumpShader,
+	gx_shadowShader
+} gxshader_t;
+
+// locals
+static gxshader_t 		gxCurrentShader;
+static shadowlight_t 	*currentBumpShaderLight;
+static entity_t			*currentBumpShaderEntity;
+
+// protos (gx2gl render.c)
+GXTexObj 	*GX_getTexObj(GLuint texture) ;
+void 		GX_LoadGLProjection(void);
+Mtx44 		*GX_GetCurrGLPrjMtx(void);
+Mtx 		*GX_GetCurrGLModelViewMtx(void);
+
+
+/*
+ * =================================================
+ * void GX_InitGXExt()
+ * init vtx formats
+ * =================================================
+ */
+void GX_InitGXExt() {
+	gxCurrentShader = gx_noShader;
+	currentBumpShaderLight = NULL;
+	currentBumpShaderEntity = NULL;
+	
+	// VTX FORMATS
+	// GX_VTXFMT1 - tripple tex shader
+	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_TEX1, GX_TEX_ST, GX_F32, 0);
+
+	// world bump
+	GX_SetVtxAttrFmt(GX_VTXFMT2, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT2, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT2, GX_VA_TEX1, GX_TEX_ST, GX_F32, 0);
+	
+	// shadows
+	GX_SetVtxAttrFmt(GX_VTXFMT3, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
+	
+	
+}
+
+/*static GXTexRegion *TexRegionCallback(GXTexObj *obj,u8 texmapid) {
+	u32 fmt,mipmap;
+	GXTexRegion *ret = NULL;
+
+	fmt = GX_GetTexObjFmt(obj);
+	
+	if(fmt==GX_TF_CMPR) {
+		ret = &__gx->texRegion[mapid];
+	} else {
+		ret = &__gx->texRegion[mapid+8];
+	}
+
+
+	return ret;
+}*/
+
+/*
+ * =================================================
+ * void GX_BindGLTex(u8 gxTexmap, int texnr)
+ * ref: gx2gl render.c
+ * =================================================
+ */
+void GX_BindGLTex(u8 gxTexmap, int texnr) {
+	GXTexObj *tex = GX_getTexObj(texnr);
+	if (tex) {
+		GX_LoadTexObj(tex, gxTexmap); 
+	}
+} 
+
+
+/*
+ * =================================================
+ * int GX_AsGXPrimitiveType(GLenum type)
+ * ref: gx2gl render.c
+ * =================================================
+ */
+int GX_AsGXPrimitiveType(GLenum type) {
+	u8 _type;
+	switch(type) { // from gl2gx gl_render.c
+		case GL_POINTS: _type = GX_POINTS; break;
+		case GL_LINES: _type = GX_LINES; break;
+		case GL_LINE_STRIP: _type = GX_LINESTRIP; break;      
+		case GL_TRIANGLES: _type = GX_TRIANGLES; break;
+        case GL_TRIANGLE_STRIP: _type = GX_TRIANGLESTRIP; break;
+		case GL_TRIANGLE_FAN: _type = GX_TRIANGLEFAN; break;
+		case GL_QUADS: _type = GX_QUADS; break;
+		case GL_POLYGON: _type = GX_TRIANGLEFAN; break;
+		case GL_QUAD_STRIP: _type = GX_TRIANGLESTRIP; break; // DRS: just might work
+		case GL_LINE_LOOP:
+			 _type = GX_NONE;
+			 break;
+		default:
+			 _type = GX_NONE;
+			break;
+	};
+	
+	return _type;
+}
+
+/*
+ * =================================================
+ * void GX_SetupGLRender(void)
+ * loads the current GL projection matrix
+ * sets up zmode, alpha etc
+ * =================================================
+ */
+void GX_SetupGLRender(void) {
+	// setup GL projection mtx (gx2gl render.c)
+	GX_LoadGLProjection();
+	
+	// culling
+	GX_SetCullMode(GX_CULL_BACK);
+
+	// output
+	GX_SetAlphaUpdate(GX_TRUE);
+	GX_SetColorUpdate(GX_TRUE);
+
+	// zmode
+	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
+
+	// z-comp and alpha compare
+	GX_SetZCompLoc(GX_TRUE);
+	GX_SetAlphaCompare(GX_ALWAYS, 1.0f, GX_AOP_AND, GX_ALWAYS, 1.0f);
+
+	// no fog for now DRS TODO: was it this that caused the black outs? see glut.c swapBuffers
+	GXColor col;
+	col.r = 0; col.g = 0; col.b = 0; col.a = 0;
+	GX_SetFog(GX_FOG_NONE, 0, GX_MAX_Z24, 0.1f, 1.0f, col);		
+	
+	// no shader loaded
+	gxCurrentShader = gx_noShader;
+	currentBumpShaderLight = NULL;
+	currentBumpShaderEntity = NULL;
+	
+
+}
+
+
+
+/*
+ * =================================================
+ * void GX_InitAmbientShader(bool hasLuma)
+ * texcoord 0 = diffuse, luma
+ * texcoord 1 = quake legacy lightmap
+ * texmap 0 = diffuse
+ * texmap 1 = lightmap
+ * texmap 2 = luma
+ * =================================================
+ */
+void GX_InitAmbientShader(bool hasLuma) {
+
+	if (gxCurrentShader != gx_ambientShader) {
+
+		// input
+		GX_ClearVtxDesc();
+		GX_SetVtxDesc(GX_VA_POS, GX_DIRECT);
+		GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
+		GX_SetVtxDesc(GX_VA_TEX1, GX_DIRECT);
+		GX_InvVtxCache();
+
+		//set number of textures to generate
+		GX_SetNumTexGens(2);
+
+		// setup texture coordinate generation
+		GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
+		GX_SetTexCoordGen(GX_TEXCOORD1, GX_TG_MTX2x4, GX_TG_TEX1, GX_IDENTITY);
+
+		// setup tev
+		GX_SetTevColorIn(GX_TEVSTAGE0, GX_CC_ZERO, GX_CC_TEXC, GX_CC_HALF, GX_CC_ZERO); 
+		GX_SetTevColorOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+		GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLORZERO);
+		GX_SetTevDirect(GX_TEVSTAGE0);
+		
+		GX_SetTevColorIn(GX_TEVSTAGE1, GX_CC_ZERO, GX_CC_TEXA, GX_CC_CPREV, GX_CC_ZERO); 
+		GX_SetTevColorOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+		GX_SetTevOrder(GX_TEVSTAGE1, GX_TEXCOORD1, GX_TEXMAP1, GX_COLORZERO);
+		GX_SetTevDirect(GX_TEVSTAGE1);
+
+		GX_SetTevColorIn(GX_TEVSTAGE2, GX_CC_ZERO, GX_CC_TEXA, GX_CC_ONE, GX_CC_CPREV); 
+		GX_SetTevColorOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+		GX_SetTevOrder(GX_TEVSTAGE2, GX_TEXCOORD0, GX_TEXMAP2, GX_COLORZERO);
+		GX_SetTevDirect(GX_TEVSTAGE2);
+
+		// register current shader
+		gxCurrentShader = gx_ambientShader;
+
+		// output
+		GX_SetAlphaUpdate(GX_FALSE);
+		GX_SetColorUpdate(GX_TRUE);
+
+		// setup blend mode
+		GX_SetBlendMode(GX_BM_NONE, GX_BL_ONE, GX_BL_ONE, GX_LO_NOOP);	
+
+		// culling
+		GX_SetCullMode(GX_CULL_BACK);
+		
+		// zmode
+		GX_SetZMode(GX_ENABLE, GX_LEQUAL, GX_TRUE);
+		
+	}
+	
+	// setup number of tev stages
+	GX_SetNumTevStages(1);//2 + (hasLuma ? 1 : 0));
+	
+}
+
+
+/*
+ * =================================================
+ * void GX_InitWorldBumpShader(shadowlight_t *light, entity_t *entity)
+ * normal	= normal
+ * tangent = lightvec
+ * bitangent = halfvec
+ * texcoord 0 = diffuse, normal, gloss texmap coords
+ * texcoord 1 = attn coords
+ * texmap 0 = diffuse
+ * texmap 1 = normal map
+ * texmap 2 = gloss map
+ *
+ * texmap 3 = attn index
+ * texmap 4 = lightdir normalize tex
+ * texmap 5 = stencil tex
+ * texmap 6 = light filter 
+ 
+ * =================================================
+ */
+void GX_InitWorldBumpShader(shadowlight_t *light, entity_t *entity) {
+
+	if (gxCurrentShader != gx_worldBumpShader) {
+		//GXColor color;
+		
+		// register current shader
+		gxCurrentShader = gx_worldBumpShader;
+
+		// wait until done
+		GX_PixModeSync();
+		GX_DrawDone();
+
+		// input
+		GX_ClearVtxDesc();
+		GX_SetVtxDesc(GX_VA_POS, GX_DIRECT);
+		GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
+		GX_SetVtxDesc(GX_VA_TEX1, GX_DIRECT);
+		GX_InvVtxCache();
+
+		//  texmap light attenuation
+		GX_BindGLTex(GX_TEXMAP1, glow_texture_object);
+
+		//set number of textures to generate
+		GX_SetNumTexGens(3);
+		
+		// setup texture coordinate generation
+		GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY); // texmap
+		GX_SetTexCoordGen(GX_TEXCOORD1, GX_TG_MTX2x4, GX_TG_TEX1, GX_IDENTITY); // attenuation map
+		GX_SetTexCoordGen2(GX_TEXCOORD2, GX_TG_MTX3x4, GX_TG_POS, GX_TEXMTX0, GX_FALSE, GX_DTTMTX0); // stencil
+
+		// setup tev
+		GX_SetTevColorIn(GX_TEVSTAGE0, GX_CC_ZERO, GX_CC_TEXC, GX_CC_C2, GX_CC_ZERO);  // load attenuation
+		GX_SetTevColorOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVREG0);
+		GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD1, GX_TEXMAP1, GX_COLOR0A0);
+		GX_SetTevDirect(GX_TEVSTAGE0);
+		
+		GX_SetTevColorIn(GX_TEVSTAGE1, GX_CC_ZERO, GX_CC_TEXC, GX_CC_C0, GX_CC_ZERO); // diffuse map
+		GX_SetTevColorOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_2, GX_TRUE, GX_TEVPREV);
+		GX_SetTevOrder(GX_TEVSTAGE1, GX_TEXCOORD0, GX_TEXMAP0, GX_COLORZERO);
+		GX_SetTevDirect(GX_TEVSTAGE1);
+
+		GX_SetTevColorIn(GX_TEVSTAGE2, GX_CC_TEXC, GX_CC_ZERO, GX_CC_CPREV, GX_CC_ZERO);
+		GX_SetTevColorOp(GX_TEVSTAGE2, GX_TEV_COMP_RGB8_EQ, GX_TB_ZERO, GX_CS_SCALE_1, GX_FALSE, GX_TEVPREV);
+		GX_SetTevOrder(GX_TEVSTAGE2, GX_TEXCOORD2, GX_TEXMAP5, GX_COLORZERO);
+		GX_SetTevDirect(GX_TEVSTAGE2);
+
+		// output
+		GX_SetAlphaUpdate(GX_FALSE);
+		GX_SetColorUpdate(GX_TRUE);
+
+		// setup blend mode
+		GX_SetBlendMode(GX_BM_BLEND, GX_BL_ONE, GX_BL_ONE, GX_LO_NOOP);	
+
+		// culling
+		GX_SetCullMode(GX_CULL_BACK);
+
+		// setup number of tev stages
+		GX_SetNumTevStages(3);
+
+		// zmode
+		GX_SetZMode(GX_ENABLE, GX_LEQUAL, GX_TRUE);
+
+	}
+	
+	if (currentBumpShaderEntity != entity) {
+		Mtx   mvMtx;
+		
+		currentBumpShaderEntity = entity;
+		
+		// setup texture transform
+		memcpy(&mvMtx, GX_GetCurrGLModelViewMtx(), sizeof(Mtx));
+		GX_LoadTexMtxImm(mvMtx, GX_TEXMTX0, GX_MTX3x4);
+		
+	}
+	
+	if (currentBumpShaderLight != light) {
+		Mtx44 prMtx;
+		float c0, c1, s, t, ss, st;
+		currentBumpShaderLight = light;
+
+		memcpy(&prMtx, GX_GetCurrGLPrjMtx(), sizeof(Mtx44)); // gl_render.c
+		c0 = 0.5f*prMtx[0][0];
+		c1 = -0.5f*prMtx[1][1];
+		ss = (float) light->scizz.coords[0];
+		st = (float) light->scizz.coords[1];
+		s  = -0.5f + ss/((float) glwidth); // translate coords to stencil texture origin
+		t  = -0.5f + st/((float) glheight); // 
+		Mtx tpMtx = 
+			{{  c0,  0.0f,     s,  0.0f},
+			 {0.0f,    c1,     t,  0.0f},
+			 {0.0f,  0.0f, -1.0f,  0.0f}};
+			 
+		GX_LoadTexMtxImm(tpMtx, GX_DTTMTX0, GX_MTX3x4);
+		
+	}
+	
+}
+
+
+/*
+ * =================================================
+ * void GX_InitShadowShader(bool add)
+ * 
+ * add = true -> increase alphabuffer
+ * add = false-> decrease alphabuffer
+ * =================================================
+ */
+void GX_InitShadowShader(bool add) {
+
+	// wait until done
+	GX_PixModeSync();
+	GX_DrawDone();
+
+	if (gxCurrentShader != gx_shadowShader) {
+		GXColor color;
+
+		// register current shader
+		gxCurrentShader = gx_shadowShader;
+
+		// input
+		GX_ClearVtxDesc();
+		GX_SetVtxDesc(GX_VA_POS, GX_DIRECT);
+		GX_InvVtxCache();
+
+		//set number of textures to generate
+		GX_SetNumTexGens(0); // none
+
+		// setup texture coordinate generation
+		// none
+		
+		// setup tev
+		color.r = 0x00;
+		color.g = 0x00;
+		color.b = 0x00;
+		color.a = 0x04;
+		GX_SetTevKColor(GX_KCOLOR0, color);
+		GX_SetTevKAlphaSel(GX_TEVSTAGE0, GX_TEV_KASEL_K0_A);
+		GX_SetTevColorIn(GX_TEVSTAGE0, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO); 
+		GX_SetTevColorOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+		GX_SetTevAlphaIn(GX_TEVSTAGE0, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST); 
+		GX_SetTevAlphaOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+		GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORDNULL, GX_TEXMAP_DISABLE, GX_COLORZERO);
+		GX_SetTevDirect(GX_TEVSTAGE0);
+		
+		// output
+		GX_SetAlphaUpdate(GX_TRUE);
+		GX_SetColorUpdate(GX_FALSE);
+
+		// setup number of tev stages
+		GX_SetNumTevStages(1);
+		
+		// zmode
+		GX_SetZMode(GX_ENABLE, GX_GEQUAL, GX_FALSE); 
+
+	}
+	
+	// setup blend mode
+	if (add) {
+		GX_SetCullMode(GX_CULL_FRONT);  // add
+		GX_SetBlendMode(GX_BM_BLEND, GX_BL_ONE, GX_BL_ONE, GX_LO_NOOP);	
+	} else {
+		GX_SetCullMode(GX_CULL_BACK);  // substract
+		GX_SetBlendMode(GX_BM_SUBSTRACT, GX_BL_ONE, GX_BL_ONE, GX_LO_NOOP);	
+	}
+	
+}
+
+
+/*
+ * =================================================
+ * void GX_GrabEFB()
+ * =================================================
+ */
+void GX_GrabEFB(int x, int y, int width, int height, u8 fmt, u8 clear, u8 mipmap, int pixsize, void *data) {
+	GX_PixModeSync();
+	GX_DrawDone();
+
+	GX_SetTexCopySrc(x, y, width, height);
+	GX_SetTexCopyDst(glwidth, height, fmt, mipmap);
+//	GX_SetTexCopyDst(width, height, fmt, mipmap);
+
+	GX_CopyTex(data, clear);
+	GX_PixModeSync();
+
+//	DCFlushRange(data, pixsize * width * height);
+
+}
+
+
+
+
+

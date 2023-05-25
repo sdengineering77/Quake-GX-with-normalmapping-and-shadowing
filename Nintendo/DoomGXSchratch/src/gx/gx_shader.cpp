@@ -1,0 +1,108 @@
+/*
+ * gx_shader.cpp
+ *
+ *  Created on: 1 sep. 2012
+ *      Author: Danny
+ */
+
+#include "gx_qgx.h"
+
+typedef enum {
+	gx_noShader,
+	gx_defaultShader,
+	gx_ambientShader,
+	gx_worldBumpShader,
+	gx_shadowShader
+} gxshader_t;
+
+// locals
+static gxshader_t 		gxCurrentShader;
+static gxvtxfmt_t		gxvtxfmts[8];
+
+/*
+ * =================================================
+ * void qgxInitGXShader()
+ * init vtx formats
+ * =================================================
+ */
+void qgxInitGXShader() {
+	gxCurrentShader = gx_noShader;
+
+	// VTX FORMATS
+	// GX_VTXFMT0 - default shader
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
+	gxvtxfmts[gx_defaultShader-1].gxvtxfmt = GX_VTXFMT0;
+	gxvtxfmts[gx_defaultShader-1].numcolors = 0;
+	gxvtxfmts[gx_defaultShader-1].numnormals = 0;
+	gxvtxfmts[gx_defaultShader-1].numtexmaps = 1;
+
+}
+
+gxvtxfmt_t qgxGetCurrentGXVtxFmt(void) {
+	if (gxCurrentShader == gx_noShader) {
+		Sys_Error("qgxGetCurrentGXVtxFmt: No shader set!\r\n");
+	}
+
+	return gxvtxfmts[gxCurrentShader-1];
+}
+
+
+/*
+ * =================================================
+ * void qgxInitDefaultShader()
+ * texcoord 0 = diffuse
+ * texmap 0 = diffuse
+ * =================================================
+ */
+void qgxInitDefaultShader(void) {
+
+	if (gxCurrentShader != gx_defaultShader) {
+Sys_Printf(">>> Set default shader\r\n");
+		// register current shader
+		gxCurrentShader = gx_defaultShader;
+
+		// input
+		GX_ClearVtxDesc();
+		GX_SetVtxDesc(GX_VA_POS, GX_INDEX16);
+		GX_SetVtxDesc(GX_VA_TEX0, GX_INDEX16);
+		GX_InvVtxCache();
+
+		//set number of textures to generate
+		GX_SetNumTexGens(1);
+
+		// setup texture coordinate generation
+		Mtx tmp;
+		guMtxIdentity(tmp);
+		GX_LoadTexMtxImm(tmp, GX_TEXMTX0, GX_MTX3x4);
+		GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_TEXMTX0);
+
+		// setup tev
+		GX_SetTevKColorSel(GX_TEVSTAGE0, GX_TEV_KCSEL_K0);
+		GX_SetTevKAlphaSel(GX_TEVSTAGE0, GX_TEV_KCSEL_K0_A);
+		GX_SetTevColorIn(GX_TEVSTAGE0, GX_CC_ZERO, GX_CC_TEXC, GX_CC_KONST, GX_CC_ZERO);
+		GX_SetTevColorOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+		GX_SetTevAlphaIn(GX_TEVSTAGE0, GX_CA_ZERO, GX_CA_TEXA, GX_CA_KONST, GX_CA_ZERO);
+		GX_SetTevAlphaOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+		GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLORZERO);
+		GX_SetTevDirect(GX_TEVSTAGE0);
+
+		// output
+		GX_SetAlphaUpdate(GX_FALSE);
+		GX_SetColorUpdate(GX_TRUE);
+
+		// setup blend mode
+		GX_SetBlendMode(GX_BM_BLEND, GX_BL_ONE, GX_BL_ONE, GX_LO_NOOP);
+
+		// culling
+		GX_SetCullMode(GX_CULL_BACK);
+
+		// zmode
+		GX_SetZMode(GX_ENABLE, GX_LEQUAL, GX_TRUE);
+
+		// setup number of tev stages
+		GX_SetNumTevStages(1);
+	}
+}
+
+

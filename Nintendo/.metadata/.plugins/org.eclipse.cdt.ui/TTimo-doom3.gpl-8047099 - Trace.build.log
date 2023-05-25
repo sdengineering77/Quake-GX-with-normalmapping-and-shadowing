@@ -1,0 +1,8 @@
+
+**** Rebuild of configuration Debug for project TTimo-doom3.gpl-8047099 - Trace ****
+
+**** Internal Builder is used for build               ****
+C:\Utils\devkitPro\devkitPPC\bin\powerpc-gekko-g++ -O0 -g3 -Wall -c -fmessage-length=0 -osrc\sound\OggVorbis\vorbissrc\lookup.c.o ..\src\sound\OggVorbis\vorbissrc\lookup.c.cpp
+powerpc-gekko-g++: CreateProcess: No such file or directory
+Build error occurred, build is stopped
+Time consumed: 4075  ms.  

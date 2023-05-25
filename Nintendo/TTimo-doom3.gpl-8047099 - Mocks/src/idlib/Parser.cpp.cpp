@@ -1,0 +1,1297 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
+
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
+#include "precompiled.h"
+#pragma hdrstop
+
+//#define DEBUG_EVAL
+#define MAX_DEFINEPARMS				128
+#define DEFINEHASHSIZE				2048
+
+#define TOKEN_FL_RECURSIVE_DEFINE	1
+
+define_t * idParser::globaldefines;
+
+/*
+================
+idParser::SetBaseFolder
+================
+*/
+void idParser::SetBaseFolder( const char *path) {
+    Sys_Printf("void idParser::SetBaseFolder( const char *path)\r\n");
+}
+
+
+/*
+================
+idParser::AddGlobalDefine
+================
+*/
+int idParser::AddGlobalDefine( const char *string ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::AddGlobalDefine( const char *string )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::RemoveGlobalDefine
+================
+*/
+int idParser::RemoveGlobalDefine( const char *name ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::RemoveGlobalDefine( const char *name )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::RemoveAllGlobalDefines
+================
+*/
+void idParser::RemoveAllGlobalDefines( void ) {
+    Sys_Printf("void idParser::RemoveAllGlobalDefines( void )\r\n");
+}
+
+
+
+/*
+===============================================================================
+
+idParser
+
+===============================================================================
+*/
+
+/*
+================
+idParser::PrintDefine
+================
+*/
+void idParser::PrintDefine( define_t *define ) {
+    Sys_Printf("void idParser::PrintDefine( define_t *define )\r\n");
+}
+
+
+/*
+================
+PC_PrintDefineHashTable
+================
+* /
+static void PC_PrintDefineHashTable(define_t **definehash) {
+    Sys_Printf("void PC_PrintDefineHashTable(define_t **definehash)\r\n");
+}
+
+*/
+
+/*
+================
+PC_NameHash
+================
+*/
+ID_INLINE int PC_NameHash( const char *name ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int PC_NameHash( const char *name )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::AddDefineToHash
+================
+*/
+void idParser::AddDefineToHash( define_t *define, define_t **definehash ) {
+    Sys_Printf("void idParser::AddDefineToHash( define_t *define, define_t **definehash )\r\n");
+}
+
+
+/*
+================
+FindHashedDefine
+================
+*/
+define_t *idParser::FindHashedDefine( define_t **definehash, const char *name ) {
+    Sys_Printf("define_t *idParser::FindHashedDefine( define_t **definehash, const char *name )\r\n");
+    return NULL;
+}
+
+
+/*
+================
+idParser::FindDefine
+================
+*/
+define_t *idParser::FindDefine( define_t *defines, const char *name ) {
+    Sys_Printf("define_t *idParser::FindDefine( define_t *defines, const char *name )\r\n");
+    return NULL;
+}
+
+
+/*
+================
+idParser::FindDefineParm
+================
+*/
+int idParser::FindDefineParm( define_t *define, const char *name ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::FindDefineParm( define_t *define, const char *name )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::CopyDefine
+================
+*/
+define_t *idParser::CopyDefine( define_t *define ) {
+    Sys_Printf("define_t *idParser::CopyDefine( define_t *define )\r\n");
+    return NULL;
+}
+
+
+/*
+================
+idParser::FreeDefine
+================
+*/
+void idParser::FreeDefine( define_t *define ) {
+    Sys_Printf("void idParser::FreeDefine( define_t *define )\r\n");
+}
+
+
+/*
+================
+idParser::DefineFromString
+================
+*/
+define_t *idParser::DefineFromString( const char *string ) {
+    Sys_Printf("define_t *idParser::DefineFromString( const char *string )\r\n");
+    return NULL;
+}
+
+
+/*
+================
+idParser::Error
+================
+*/
+void idParser::Error( const char *str, ... ) const {
+    Sys_Printf("void idParser::Error( const char *str, ... )\r\n");
+}
+
+
+/*
+================
+idParser::Warning
+================
+*/
+void idParser::Warning( const char *str, ... ) const {
+    Sys_Printf("void idParser::Warning( const char *str, ... )\r\n");
+}
+
+
+/*
+================
+idParser::PushIndent
+================
+*/
+void idParser::PushIndent( int type, int skip ) {
+    Sys_Printf("void idParser::PushIndent( int type, int skip )\r\n");
+}
+
+
+/*
+================
+idParser::PopIndent
+================
+*/
+void idParser::PopIndent( int *type, int *skip ) {
+    Sys_Printf("void idParser::PopIndent( int *type, int *skip )\r\n");
+}
+
+
+/*
+================
+idParser::PushScript
+================
+*/
+void idParser::PushScript( idLexer *script ) {
+    Sys_Printf("void idParser::PushScript( idLexer *script )\r\n");
+}
+
+
+/*
+================
+idParser::ReadSourceToken
+================
+*/
+int idParser::ReadSourceToken( idToken *token ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::ReadSourceToken( idToken *token )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::UnreadSourceToken
+================
+*/
+int idParser::UnreadSourceToken( idToken *token ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::UnreadSourceToken( idToken *token )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::ReadDefineParms
+================
+*/
+int idParser::ReadDefineParms( define_t *define, idToken **parms, int maxparms ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::ReadDefineParms( define_t *define, idToken **parms, int maxparms )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::StringizeTokens
+================
+*/
+int idParser::StringizeTokens( idToken *tokens, idToken *token ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::StringizeTokens( idToken *tokens, idToken *token )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::MergeTokens
+================
+*/
+int idParser::MergeTokens( idToken *t1, idToken *t2 ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::MergeTokens( idToken *t1, idToken *t2 )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::AddBuiltinDefines
+================
+*/
+void idParser::AddBuiltinDefines( void ) {
+    Sys_Printf("void idParser::AddBuiltinDefines( void )\r\n");
+}
+
+
+/*
+================
+idParser::CopyFirstDefine
+================
+*/
+define_t *idParser::CopyFirstDefine( void ) {
+    Sys_Printf("define_t *idParser::CopyFirstDefine( void )\r\n");
+    return NULL;
+}
+
+
+/*
+================
+idParser::ExpandBuiltinDefine
+================
+*/
+int idParser::ExpandBuiltinDefine( idToken *deftoken, define_t *define, idToken **firsttoken, idToken **lasttoken ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::ExpandBuiltinDefine( idToken *deftoken, define_t *define, idToken **firsttoken, idToken **lasttoken )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::ExpandDefine
+================
+*/
+int idParser::ExpandDefine( idToken *deftoken, define_t *define, idToken **firsttoken, idToken **lasttoken ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::ExpandDefine( idToken *deftoken, define_t *define, idToken **firsttoken, idToken **lasttoken )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::ExpandDefineIntoSource
+================
+*/
+int idParser::ExpandDefineIntoSource( idToken *deftoken, define_t *define ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::ExpandDefineIntoSource( idToken *deftoken, define_t *define )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::ReadLine
+
+reads a token from the current line, continues reading on the next
+line only if a backslash '\' is found
+================
+*/
+int idParser::ReadLine( idToken *token ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::ReadLine( idToken *token )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Directive_include
+================
+*/
+int idParser::Directive_include( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Directive_include( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Directive_undef
+================
+*/
+int idParser::Directive_undef( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Directive_undef( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Directive_define
+================
+*/
+int idParser::Directive_define( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Directive_define( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::AddDefine
+================
+*/
+int idParser::AddDefine( const char *string ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::AddDefine( const char *string )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::AddGlobalDefinesToSource
+================
+*/
+void idParser::AddGlobalDefinesToSource( void ) {
+    Sys_Printf("void idParser::AddGlobalDefinesToSource( void )\r\n");
+}
+
+
+/*
+================
+idParser::Directive_if_def
+================
+*/
+int idParser::Directive_if_def( int type ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Directive_if_def( int type )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Directive_ifdef
+================
+*/
+int idParser::Directive_ifdef( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Directive_ifdef( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Directive_ifndef
+================
+*/
+int idParser::Directive_ifndef( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Directive_ifndef( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Directive_else
+================
+*/
+int idParser::Directive_else( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Directive_else( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Directive_endif
+================
+*/
+int idParser::Directive_endif( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Directive_endif( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::EvaluateTokens
+================
+*/
+typedef struct operator_s
+{
+	int op;
+	int priority;
+	int parentheses;
+	struct operator_s *prev, *next;
+} operator_t;
+
+typedef struct value_s
+{
+	signed long int intvalue;
+	double floatvalue;
+	int parentheses;
+	struct value_s *prev, *next;
+} value_t;
+
+int PC_OperatorPriority(int op) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int PC_OperatorPriority(int op)\r\n");
+    return retVal;
+}
+
+
+//#define AllocValue()			GetClearedMemory(sizeof(value_t));
+//#define FreeValue(val)		FreeMemory(val)
+//#define AllocOperator(op)		op = (operator_t *) GetClearedMemory(sizeof(operator_t));
+//#define FreeOperator(op)		FreeMemory(op);
+
+#define MAX_VALUES		64
+#define MAX_OPERATORS	64
+
+#define AllocValue(val)									\
+	if ( numvalues >= MAX_VALUES ) {					\
+		idParser::Error( "out of value space\n" );		\
+		error = 1;										\
+		break;											\
+	}													\
+	else {												\
+		val = &value_heap[numvalues++];					\
+	}
+
+#define FreeValue(val)
+
+#define AllocOperator(op)								\
+	if ( numoperators >= MAX_OPERATORS ) {				\
+		idParser::Error( "out of operator space\n" );	\
+		error = 1;										\
+		break;											\
+	}													\
+	else {												\
+		op = &operator_heap[numoperators++];			\
+	}
+
+#define FreeOperator(op)
+
+int idParser::EvaluateTokens( idToken *tokens, signed long int *intvalue, double *floatvalue, int integer ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::EvaluateTokens( idToken *tokens, signed long int *intvalue, double *floatvalue, int integer )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Evaluate
+================
+*/
+int idParser::Evaluate( signed long int *intvalue, double *floatvalue, int integer ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Evaluate( signed long int *intvalue, double *floatvalue, int integer )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::DollarEvaluate
+================
+*/
+int idParser::DollarEvaluate( signed long int *intvalue, double *floatvalue, int integer) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::DollarEvaluate( signed long int *intvalue, double *floatvalue, int integer)\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Directive_elif
+================
+*/
+int idParser::Directive_elif( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Directive_elif( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Directive_if
+================
+*/
+int idParser::Directive_if( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Directive_if( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Directive_line
+================
+*/
+int idParser::Directive_line( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Directive_line( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Directive_error
+================
+*/
+int idParser::Directive_error( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Directive_error( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Directive_warning
+================
+*/
+int idParser::Directive_warning( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Directive_warning( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Directive_pragma
+================
+*/
+int idParser::Directive_pragma( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Directive_pragma( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::UnreadSignToken
+================
+*/
+void idParser::UnreadSignToken( void ) {
+    Sys_Printf("void idParser::UnreadSignToken( void )\r\n");
+}
+
+
+/*
+================
+idParser::Directive_eval
+================
+*/
+int idParser::Directive_eval( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Directive_eval( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Directive_evalfloat
+================
+*/
+int idParser::Directive_evalfloat( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Directive_evalfloat( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::ReadDirective
+================
+*/
+int idParser::ReadDirective( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::ReadDirective( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::DollarDirective_evalint
+================
+*/
+int idParser::DollarDirective_evalint( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::DollarDirective_evalint( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::DollarDirective_evalfloat
+================
+*/
+int idParser::DollarDirective_evalfloat( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::DollarDirective_evalfloat( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::ReadDollarDirective
+================
+*/
+int idParser::ReadDollarDirective( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::ReadDollarDirective( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::ReadToken
+================
+*/
+int idParser::ReadToken( idToken *token ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::ReadToken( idToken *token )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::ExpectTokenString
+================
+*/
+int idParser::ExpectTokenString( const char *string ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::ExpectTokenString( const char *string )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::ExpectTokenType
+================
+*/
+int idParser::ExpectTokenType( int type, int subtype, idToken *token ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::ExpectTokenType( int type, int subtype, idToken *token )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::ExpectAnyToken
+================
+*/
+int idParser::ExpectAnyToken( idToken *token ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::ExpectAnyToken( idToken *token )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::CheckTokenString
+================
+*/
+int idParser::CheckTokenString( const char *string ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::CheckTokenString( const char *string )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::CheckTokenType
+================
+*/
+int idParser::CheckTokenType( int type, int subtype, idToken *token ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::CheckTokenType( int type, int subtype, idToken *token )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::PeekTokenString
+================
+*/
+int idParser::PeekTokenString( const char *string ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::PeekTokenString( const char *string )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::PeekTokenType
+================
+*/
+int idParser::PeekTokenType( int type, int subtype, idToken *token ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::PeekTokenType( int type, int subtype, idToken *token )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::SkipUntilString
+================
+*/
+int idParser::SkipUntilString( const char *string ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::SkipUntilString( const char *string )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::SkipRestOfLine
+================
+*/
+int idParser::SkipRestOfLine( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::SkipRestOfLine( void )\r\n");
+    return retVal;
+}
+
+
+/*
+=================
+idParser::SkipBracedSection
+
+Skips until a matching close brace is found.
+Internal brace depths are properly skipped.
+=================
+*/
+int idParser::SkipBracedSection( bool parseFirstBrace ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::SkipBracedSection( bool parseFirstBrace )\r\n");
+    return retVal;
+}
+
+
+/*
+=================
+idParser::ParseBracedSectionExact
+
+The next token should be an open brace.
+Parses until a matching close brace is found.
+Maintains the exact formating of the braced section
+
+  FIXME: what about precompilation ?
+=================
+*/
+const char *idParser::ParseBracedSectionExact( idStr &out, int tabs ) {
+    Sys_Printf("char *idParser::ParseBracedSectionExact( idStr &out, int tabs )\r\n");
+    return NULL;
+}
+
+
+/*
+=================
+idParser::ParseBracedSection
+
+The next token should be an open brace.
+Parses until a matching close brace is found.
+Internal brace depths are properly skipped.
+=================
+*/
+const char *idParser::ParseBracedSection( idStr &out, int tabs ) {
+    Sys_Printf("char *idParser::ParseBracedSection( idStr &out, int tabs )\r\n");
+    return NULL;
+}
+
+
+/*
+=================
+idParser::ParseRestOfLine
+
+  parse the rest of the line
+=================
+*/
+const char *idParser::ParseRestOfLine( idStr &out ) {
+    Sys_Printf("char *idParser::ParseRestOfLine( idStr &out )\r\n");
+    return NULL;
+}
+
+
+/*
+================
+idParser::UnreadToken
+================
+*/
+void idParser::UnreadToken( idToken *token ) {
+    Sys_Printf("void idParser::UnreadToken( idToken *token )\r\n");
+}
+
+
+/*
+================
+idParser::ReadTokenOnLine
+================
+*/
+int idParser::ReadTokenOnLine( idToken *token ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::ReadTokenOnLine( idToken *token )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::ParseInt
+================
+*/
+int idParser::ParseInt( void ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::ParseInt( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::ParseBool
+================
+*/
+bool idParser::ParseBool( void ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idParser::ParseBool( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::ParseFloat
+================
+*/
+float idParser::ParseFloat( void ) {
+    float retVal;
+    memset(&retVal, 0, sizeof(float));
+    Sys_Printf("float idParser::ParseFloat( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Parse1DMatrix
+================
+*/
+int idParser::Parse1DMatrix( int x, float *m ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Parse1DMatrix( int x, float *m )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Parse2DMatrix
+================
+*/
+int idParser::Parse2DMatrix( int y, int x, float *m ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Parse2DMatrix( int y, int x, float *m )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::Parse3DMatrix
+================
+*/
+int idParser::Parse3DMatrix( int z, int y, int x, float *m ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::Parse3DMatrix( int z, int y, int x, float *m )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::GetLastWhiteSpace
+================
+*/
+int idParser::GetLastWhiteSpace( idStr &whiteSpace ) const {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::GetLastWhiteSpace( idStr &whiteSpace )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::SetMarker
+================
+*/
+void idParser::SetMarker( void ) {
+    Sys_Printf("void idParser::SetMarker( void )\r\n");
+}
+
+
+/*
+================
+idParser::GetStringFromMarker
+
+  FIXME: this is very bad code, the script isn't even garrenteed to still be around
+================
+*/
+void idParser::GetStringFromMarker( idStr& out, bool clean ) {
+    Sys_Printf("void idParser::GetStringFromMarker( idStr& out, bool clean )\r\n");
+}
+
+
+/*
+================
+idParser::SetIncludePath
+================
+*/
+void idParser::SetIncludePath( const char *path ) {
+    Sys_Printf("void idParser::SetIncludePath( const char *path )\r\n");
+}
+
+
+/*
+================
+idParser::SetPunctuations
+================
+*/
+void idParser::SetPunctuations( const punctuation_t *p ) {
+    Sys_Printf("void idParser::SetPunctuations( const punctuation_t *p )\r\n");
+}
+
+
+/*
+================
+idParser::SetFlags
+================
+*/
+void idParser::SetFlags( int flags ) {
+    Sys_Printf("void idParser::SetFlags( int flags )\r\n");
+}
+
+
+/*
+================
+idParser::GetFlags
+================
+*/
+int idParser::GetFlags( void ) const {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::GetFlags( void )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::LoadFile
+================
+*/
+int idParser::LoadFile( const char *filename, bool OSPath ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::LoadFile( const char *filename, bool OSPath )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::LoadMemory
+================
+*/
+int idParser::LoadMemory(const char *ptr, int length, const char *name ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::LoadMemory(const char *ptr, int length, const char *name )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::FreeSource
+================
+*/
+void idParser::FreeSource( bool keepDefines ) {
+    Sys_Printf("void idParser::FreeSource( bool keepDefines )\r\n");
+}
+
+
+/*
+================
+idParser::GetPunctuationFromId
+================
+*/
+const char *idParser::GetPunctuationFromId( int id ) {
+    Sys_Printf("char *idParser::GetPunctuationFromId( int id )\r\n");
+    return NULL;
+}
+
+
+/*
+================
+idParser::GetPunctuationId
+================
+*/
+int idParser::GetPunctuationId( const char *p ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idParser::GetPunctuationId( const char *p )\r\n");
+    return retVal;
+}
+
+
+/*
+================
+idParser::idParser
+================
+*/
+idParser::idParser() {
+	this->loaded = false;
+	this->OSPath = false;
+	this->punctuations = 0;
+	this->flags = 0;
+	this->scriptstack = NULL;
+	this->indentstack = NULL;
+	this->definehash = NULL;
+	this->defines = NULL;
+	this->tokens = NULL;
+	this->marker_p = NULL;
+}
+
+/*
+================
+idParser::idParser
+================
+*/
+idParser::idParser( int flags ) {
+	this->loaded = false;
+	this->OSPath = false;
+	this->punctuations = 0;
+	this->flags = flags;
+	this->scriptstack = NULL;
+	this->indentstack = NULL;
+	this->definehash = NULL;
+	this->defines = NULL;
+	this->tokens = NULL;
+	this->marker_p = NULL;
+}
+
+/*
+================
+idParser::idParser
+================
+*/
+idParser::idParser( const char *filename, int flags, bool OSPath ) {
+	this->loaded = false;
+	this->OSPath = true;
+	this->punctuations = 0;
+	this->flags = flags;
+	this->scriptstack = NULL;
+	this->indentstack = NULL;
+	this->definehash = NULL;
+	this->defines = NULL;
+	this->tokens = NULL;
+	this->marker_p = NULL;
+	LoadFile( filename, OSPath );
+}
+
+/*
+================
+idParser::idParser
+================
+*/
+idParser::idParser( const char *ptr, int length, const char *name, int flags ) {
+	this->loaded = false;
+	this->OSPath = false;
+	this->punctuations = 0;
+	this->flags = flags;
+	this->scriptstack = NULL;
+	this->indentstack = NULL;
+	this->definehash = NULL;
+	this->defines = NULL;
+	this->tokens = NULL;
+	this->marker_p = NULL;
+	LoadMemory( ptr, length, name );
+}
+
+/*
+================
+idParser::~idParser
+================
+*/
+idParser::~idParser( void ) {
+	idParser::FreeSource( false );
+}
+

@@ -1,0 +1,196 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
+
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
+#include "../idlib/precompiled.h"
+#pragma hdrstop
+#include "sys_local.h"
+
+const char * sysLanguageNames[] = {
+	"english", "spanish", "italian", "german", "french", "russian", 
+	"polish", "korean", "japanese", "chinese", NULL
+};
+
+idCVar sys_lang( "sys_lang", "english", CVAR_SYSTEM | CVAR_ARCHIVE,  "", sysLanguageNames, idCmdSystem::ArgCompletion_String<sysLanguageNames> );
+
+idSysLocal			sysLocal;
+idSys *				sys = &sysLocal;
+
+void idSysLocal::DebugPrintf( const char *fmt, ... ) {
+    Sys_Printf("void idSysLocal::DebugPrintf( const char *fmt, ... )\r\n");
+}
+
+
+void idSysLocal::DebugVPrintf( const char *fmt, va_list arg ) {
+    Sys_Printf("void idSysLocal::DebugVPrintf( const char *fmt, va_list arg )\r\n");
+}
+
+
+double idSysLocal::GetClockTicks( void ) {
+    double retVal;
+    memset(&retVal, 0, sizeof(double));
+    Sys_Printf("double idSysLocal::GetClockTicks( void )\r\n");
+    return retVal;
+}
+
+
+double idSysLocal::ClockTicksPerSecond( void ) {
+    double retVal;
+    memset(&retVal, 0, sizeof(double));
+    Sys_Printf("double idSysLocal::ClockTicksPerSecond( void )\r\n");
+    return retVal;
+}
+
+
+cpuid_t idSysLocal::GetProcessorId( void ) {
+    cpuid_t retVal;
+    memset(&retVal, 0, sizeof(cpuid_t));
+    Sys_Printf("cpuid_t idSysLocal::GetProcessorId( void )\r\n");
+    return retVal;
+}
+
+
+const char *idSysLocal::GetProcessorString( void ) {
+    Sys_Printf("char *idSysLocal::GetProcessorString( void )\r\n");
+    return NULL;
+}
+
+
+const char *idSysLocal::FPU_GetState( void ) {
+    Sys_Printf("char *idSysLocal::FPU_GetState( void )\r\n");
+    return NULL;
+}
+
+
+bool idSysLocal::FPU_StackIsEmpty( void ) {
+    bool retVal;
+    memset(&retVal, 0, sizeof(bool));
+    Sys_Printf("bool idSysLocal::FPU_StackIsEmpty( void )\r\n");
+    return retVal;
+}
+
+
+void idSysLocal::FPU_SetFTZ( bool enable ) {
+    Sys_Printf("void idSysLocal::FPU_SetFTZ( bool enable )\r\n");
+}
+
+
+void idSysLocal::FPU_SetDAZ( bool enable ) {
+    Sys_Printf("void idSysLocal::FPU_SetDAZ( bool enable )\r\n");
+}
+
+
+bool idSysLocal::LockMemory( void *ptr, int bytes ) {
+    // DRS TODO: call system func that returns true (posix_main.cpp returns true)
+	return true;
+}
+
+
+bool idSysLocal::UnlockMemory( void *ptr, int bytes ) {
+    // DRS TODO: call system func that returns true (posix_main.cpp returns true)
+	return true;
+}
+
+
+void idSysLocal::GetCallStack( address_t *callStack, const int callStackSize ) {
+    Sys_Printf("void idSysLocal::GetCallStack( address_t *callStack, const int callStackSize )\r\n");
+}
+
+
+const char * idSysLocal::GetCallStackStr( const address_t *callStack, const int callStackSize ) {
+    Sys_Printf("char * idSysLocal::GetCallStackStr( const address_t *callStack, const int callStackSize )\r\n");
+    return NULL;
+}
+
+
+const char * idSysLocal::GetCallStackCurStr( int depth ) {
+    Sys_Printf("char * idSysLocal::GetCallStackCurStr( int depth )\r\n");
+    return NULL;
+}
+
+
+void idSysLocal::ShutdownSymbols( void ) {
+    Sys_Printf("void idSysLocal::ShutdownSymbols( void )\r\n");
+}
+
+
+int idSysLocal::DLL_Load( const char *dllName ) {
+    int retVal;
+    memset(&retVal, 0, sizeof(int));
+    Sys_Printf("int idSysLocal::DLL_Load( const char *dllName )\r\n");
+    return retVal;
+}
+
+
+void *idSysLocal::DLL_GetProcAddress( int dllHandle, const char *procName ) {
+    Sys_Printf("void *idSysLocal::DLL_GetProcAddress( int dllHandle, const char *procName )\r\n");
+    return NULL;
+}
+
+
+void idSysLocal::DLL_Unload( int dllHandle ) {
+    Sys_Printf("void idSysLocal::DLL_Unload( int dllHandle )\r\n");
+}
+
+
+void idSysLocal::DLL_GetFileName( const char *baseName, char *dllName, int maxLength ) {
+    Sys_Printf("void idSysLocal::DLL_GetFileName( const char *baseName, char *dllName, int maxLength )\r\n");
+}
+
+
+sysEvent_t idSysLocal::GenerateMouseButtonEvent( int button, bool down ) {
+    sysEvent_t retVal;
+    memset(&retVal, 0, sizeof(sysEvent_t));
+    Sys_Printf("sysEvent_t idSysLocal::GenerateMouseButtonEvent( int button, bool down )\r\n");
+    return retVal;
+}
+
+
+sysEvent_t idSysLocal::GenerateMouseMoveEvent( int deltax, int deltay ) {
+    sysEvent_t retVal;
+    memset(&retVal, 0, sizeof(sysEvent_t));
+    Sys_Printf("sysEvent_t idSysLocal::GenerateMouseMoveEvent( int deltax, int deltay )\r\n");
+    return retVal;
+}
+
+
+void idSysLocal::FPU_EnableExceptions( int exceptions ) {
+    Sys_Printf("void idSysLocal::FPU_EnableExceptions( int exceptions )\r\n");
+}
+
+
+/*
+=================
+Sys_TimeStampToStr
+=================
+*/
+const char *Sys_TimeStampToStr( ID_TIME_T timeStamp ) {
+    Sys_Printf("char *Sys_TimeStampToStr( ID_TIME_T timeStamp )\r\n");
+    return NULL;
+}
+
+
